@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Portum - gestão portuária integrada. Demonstração com dados fictícios.">
+<link rel="icon" type="image/svg+xml" href="marca/portum-simbolo.svg">
+<style>body{margin:0}</style>
+<title>Portum</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: barra lateral de módulos (vira faixa rolável no celular) + área de trabalho com resumo no topo e detalhe abaixo */
+:root{
+  --mar:#0B2540; --agua:#1F7A7A; --agua-2:#2BA3A3; --boia:#E09422; --boia-forte:#B8730C;
+  --bg:#F3F6F8; --sup:#FFFFFF; --sup-2:#EAF0F3; --linha:#D5DEE4; --tx:#0F2233; --tx-2:#4A6072; --tx-3:#7890A0;
+  --ok:#1E8A55; --ok-bg:#E2F4EA; --at:#B7791F; --at-bg:#FBF0DC; --cr:#C2413A; --cr-bg:#FBE5E3; --info-bg:#E1F1F1;
+  --lateral:#0B2540; --lateral-tx:#C9D7E2; --lateral-ativo:#163A5C;
+  --f-disp:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --f-tx:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;
+  --f-num:'IBM Plex Mono',ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0A1620; --sup:#10212E; --sup-2:#16293A; --linha:#22394B; --tx:#E4EDF3; --tx-2:#A3B7C6; --tx-3:#7690A3;
+  --agua:#3CB5B5; --agua-2:#4CC9C9; --boia:#F2A93B; --boia-forte:#F2A93B;
+  --ok:#4CC38A; --ok-bg:#12352A; --at:#E8B04F; --at-bg:#3A2D12; --cr:#F07A72; --cr-bg:#3D1C1B; --info-bg:#123236;
+  --lateral:#071019; --lateral-tx:#A9BDCC; --lateral-ativo:#14304A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0A1620; --sup:#10212E; --sup-2:#16293A; --linha:#22394B; --tx:#E4EDF3; --tx-2:#A3B7C6; --tx-3:#7690A3;
+  --agua:#3CB5B5; --agua-2:#4CC9C9; --boia:#F2A93B; --boia-forte:#F2A93B;
+  --ok:#4CC38A; --ok-bg:#12352A; --at:#E8B04F; --at-bg:#3A2D12; --cr:#F07A72; --cr-bg:#3D1C1B; --info-bg:#123236;
+  --lateral:#071019; --lateral-tx:#A9BDCC; --lateral-ativo:#14304A; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--tx);font-family:var(--f-tx);font-size:14px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--lateral)}
+.app{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100%}
+aside{background:var(--lateral);color:var(--lateral-tx);padding-block:18px;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:14px;position:sticky;top:env(safe-area-inset-top,0px);height:100vh;overflow-y:auto;display:flex;flex-direction:column;gap:18px}
+.marca{display:flex;align-items:center;gap:10px;padding:2px 6px}
+.marca svg{width:38px;height:38px;flex:none}
+.marca b{font-family:var(--f-disp);font-size:26px;letter-spacing:2.5px;color:#fff;line-height:1}
+.marca small{display:block;font-size:9.5px;letter-spacing:1.6px;color:#7FD6D6;text-transform:uppercase}
+.porto{background:rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;font-size:12px}
+.porto b{display:block;color:#fff;font-weight:600;font-size:13px}
+nav{display:flex;flex-direction:column;gap:2px}
+nav .grupo{font-size:10.5px;letter-spacing:1.4px;text-transform:uppercase;color:#6E8BA2;padding:10px 10px 4px}
+nav a{display:flex;align-items:center;gap:10px;color:var(--lateral-tx);text-decoration:none;padding:8px 10px;border-radius:8px;font-size:13.5px}
+nav a:hover{background:rgba(255,255,255,.06);color:#fff}
+nav a[aria-current="page"]{background:var(--lateral-ativo);color:#fff;box-shadow:inset 3px 0 0 #F2A93B}
+nav a svg{width:17px;height:17px;flex:none;opacity:.85}
+nav a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--boia);outline-offset:2px}
+.rodape-lat{margin-top:auto;font-size:11px;color:#6E8BA2;padding:0 8px}
+main{min-width:0;padding-block:22px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.aviso{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;background:var(--info-bg);border:1px solid var(--linha);border-radius:10px;padding:8px 14px;font-size:12.5px;color:var(--tx-2)}
+.aviso b{color:var(--tx)}
+.cab{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.cab h1{font-family:var(--f-disp);font-weight:700;font-size:34px;letter-spacing:.5px;margin:0;line-height:1.05;text-wrap:balance}
+.cab p{margin:4px 0 0;color:var(--tx-2);max-width:68ch}
+.eyebrow{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--agua);font-weight:600}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+select,input[type=text],input[type=number]{font:inherit;color:var(--tx);background:var(--sup);border:1px solid var(--linha);border-radius:8px;padding:6px 10px}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--linha);background:var(--sup);color:var(--tx);padding:6px 12px}
+button.prim{background:var(--mar);border-color:var(--mar);color:#fff}
+:root[data-theme="dark"] button.prim{background:var(--agua);border-color:var(--agua);color:#06151A}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) button.prim{background:var(--agua);border-color:var(--agua);color:#06151A}}
+.seg{display:inline-flex;border:1px solid var(--linha);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:6px 12px}
+.seg button[aria-pressed="true"]{background:var(--mar);color:#fff}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--sup);border:1px solid var(--linha);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi span{font-size:12px;color:var(--tx-2)}
+.kpi b{font-family:var(--f-disp);font-size:30px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi b small{font-family:var(--f-tx);font-size:13px;font-weight:500;color:var(--tx-2);margin-left:3px}
+.kpi em{font-style:normal;font-size:12px}
+.up{color:var(--ok)} .down{color:var(--cr)} .neu{color:var(--tx-3)}
+.grade{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px}
+.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+.painel{background:var(--sup);border:1px solid var(--linha);border-radius:12px;padding:16px;min-width:0;display:flex;flex-direction:column;gap:12px}
+.painel h2{font-family:var(--f-disp);font-size:19px;font-weight:600;margin:0;letter-spacing:.3px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.painel h2 small{font-family:var(--f-tx);font-size:12px;font-weight:400;color:var(--tx-3);letter-spacing:0}
+.tab{overflow-x:auto;border:1px solid var(--linha);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{text-align:left;font-weight:600;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--tx-2);background:var(--sup-2);padding:8px 10px;white-space:nowrap}
+td{padding:8px 10px;border-top:1px solid var(--linha);white-space:nowrap}
+td.n,th.n{text-align:right;font-family:var(--f-num);font-variant-numeric:tabular-nums}
+tr.clic{cursor:pointer} tr.clic:hover td{background:var(--sup-2)}
+tr.sel td{background:var(--info-bg)}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;border-radius:999px;padding:2px 9px;white-space:nowrap}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.ok{color:var(--ok);background:var(--ok-bg)} .at{color:var(--at);background:var(--at-bg)} .cr{color:var(--cr);background:var(--cr-bg)} .in{color:var(--agua);background:var(--info-bg)} .ne{color:var(--tx-2);background:var(--sup-2)}
+.barra{height:8px;border-radius:99px;background:var(--sup-2);overflow:hidden;min-width:70px}
+.barra i{display:block;height:100%;border-radius:99px;background:var(--agua)}
+.barra i.b{background:var(--boia)} .barra i.r{background:var(--cr)}
+.mono{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.muted{color:var(--tx-3)}
+svg.graf{width:100%;height:auto;display:block}
+svg.graf text{fill:var(--tx-3);font-family:var(--f-tx);font-size:11px}
+svg.graf .grade-l{stroke:var(--linha);stroke-width:1}
+svg.graf .s1{fill:var(--agua)} svg.graf .s2{fill:var(--boia)} svg.graf .s3{fill:var(--tx-3);opacity:.35}
+svg.graf .l1{stroke:var(--agua);fill:none;stroke-width:2.2} svg.graf .l2{stroke:var(--boia);fill:none;stroke-width:2;stroke-dasharray:5 4}
+svg.graf .a1{fill:var(--agua);opacity:.14}
+.legenda{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--tx-2)}
+.legenda i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.pilares{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.pilar{border:1px solid var(--linha);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px;text-decoration:none;color:inherit;background:var(--sup)}
+.pilar:hover{border-color:var(--agua)}
+.pilar b{font-size:13.5px} .pilar p{margin:0;font-size:12.5px;color:var(--tx-2)}
+.lista{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.lista li{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;border-bottom:1px solid var(--linha);padding-bottom:8px}
+.lista li:last-child{border-bottom:0;padding-bottom:0}
+.lista .q{font-size:12px;color:var(--tx-3)}
+.patios{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px}
+.baia{border-radius:9px;padding:9px 10px;border:1px solid var(--linha);background:var(--sup-2);display:flex;flex-direction:column;gap:4px;cursor:pointer;text-align:left}
+.baia b{font-size:12.5px} .baia span{font-size:11.5px;color:var(--tx-2)}
+.baia[aria-pressed="true"]{outline:2px solid var(--agua)}
+.detalhe{background:var(--sup-2);border-radius:10px;padding:12px 14px;font-size:13px}
+.linha-tempo{display:flex;flex-direction:column;gap:0;margin:0;padding:0;list-style:none}
+.linha-tempo li{display:grid;grid-template-columns:52px 14px 1fr;gap:8px;align-items:start;font-size:13px}
+.linha-tempo li i{width:10px;height:10px;border-radius:50%;background:var(--agua);margin-top:5px;position:relative}
+.linha-tempo li:not(:last-child) i::after{content:"";position:absolute;left:4px;top:11px;width:2px;height:24px;background:var(--linha)}
+.linha-tempo li span{font-family:var(--f-num);color:var(--tx-2);font-size:12px;padding-top:1px}
+.linha-tempo li p{margin:0 0 12px}
+.config{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.config label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--tx-2)}
+.checks{display:flex;flex-wrap:wrap;gap:6px}
+.checks label{flex-direction:row;align-items:center;gap:6px;border:1px solid var(--linha);border-radius:8px;padding:5px 10px;color:var(--tx);background:var(--sup)}
+.toast{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--mar);color:#fff;padding:10px 14px;border-radius:10px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+@media (max-width:1000px){.c4,.c5,.c6,.c7,.c8{grid-column:span 12}}
+@media (max-width:820px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  aside{position:sticky;height:auto;flex-direction:column;gap:10px;padding-block:10px;padding-right:max(14px,env(safe-area-inset-right,0px));z-index:5}
+  .porto,.rodape-lat,nav .grupo{display:none}
+  nav{flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:4px}
+  nav a{white-space:nowrap;padding:6px 10px}
+  .cab h1{font-size:28px}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="marca">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><defs><clipPath id="lg"><rect width="64" height="64" rx="15"/></clipPath></defs><g clip-path="url(#lg)"><rect width="64" height="64" fill="#123456"/><rect x="17" y="11" width="7.5" height="33" rx="2" fill="#fff"/><path d="M23 14.75H33.5A11.25 11.25 0 0 1 33.5 37.25H23" fill="none" stroke="#fff" stroke-width="7.5"/><circle cx="33.5" cy="26" r="3.6" fill="#F2A93B"/><path d="M-2 50q5.5-4.5 11 0t11 0 11 0 11 0 11 0 11 0" fill="none" stroke="#3CC0C0" stroke-width="3.2" stroke-linecap="round"/><path d="M-7.5 57q5.5-4.5 11 0t11 0 11 0 11 0 11 0 11 0 11 0" fill="none" stroke="#3CC0C0" stroke-opacity=".55" stroke-width="3.2" stroke-linecap="round"/></g></svg>
+      <div><b>PORTUM</b><small>Gestão portuária integrada</small></div>
+    </div>
+    <div class="porto"><span>Ambiente de demonstração</span><b id="nomePorto">Terminal Baía Serena</b><span id="descPorto">Porto fictício · 4 berços</span></div>
+    <nav id="nav" aria-label="Módulos"></nav>
+    <div class="rodape-lat">Portum · demo v1 · dados fictícios</div>
+  </aside>
+  <main><div class="wrap" id="tela"></div></main>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+'use strict';
+// ---------- utilidades ----------
+const $ = s => document.querySelector(s);
+const fmt = (v, d = 0) => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function rng(seed){ let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+const ls = { get(k, d){ try { const v = localStorage.getItem('portum.' + k); return v ? JSON.parse(v) : d; } catch(e){ return d; } }, set(k, v){ try { localStorage.setItem('portum.' + k, JSON.stringify(v)); } catch(e){} } };
+function toast(t){ const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 2600); }
+const chip = (txt, cls) => `<span class="chip ${cls}">${esc(txt)}</span>`;
+const barra = (pct, cls = '') => `<div class="barra" title="${fmt(pct)}%"><i class="${cls}" style="width:${Math.max(0, Math.min(100, pct))}%"></i></div>`;
+const kpi = (rot, val, un, delta, dcls) => `<div class="kpi"><span>${rot}</span><b>${val}${un ? `<small>${un}</small>` : ''}</b>${delta ? `<em class="${dcls || 'neu'}">${delta}</em>` : ''}</div>`;
+function tabela(cols, linhas, opts = {}){
+  return `<div class="tab"><table><thead><tr>${cols.map(c => `<th class="${c.n ? 'n' : ''}">${c.t}</th>`).join('')}</tr></thead><tbody>${
+    linhas.map((l, i) => `<tr${opts.clic ? ` class="clic" data-i="${i}" tabindex="0"` : ''}>${cols.map(c => `<td class="${c.n ? 'n' : ''}">${c.f ? c.f(l) : esc(l[c.k])}</td>`).join('')}</tr>`).join('')
+  }</tbody></table></div>`;
+}
+// gráfico de barras (séries empilhadas ou lado a lado) + linha opcional
+function grafBarras({ rotulos, series, linha, altura = 200, empilhar = false, unidade = '' }){
+  const W = 640, H = altura, pl = 46, pr = 10, pt = 12, pb = 26;
+  const somas = rotulos.map((_, i) => empilhar ? series.reduce((s, se) => s + se.v[i], 0) : Math.max(...series.map(se => se.v[i])));
+  const max = Math.max(...somas, ...(linha ? linha.v : [0])) * 1.12 || 1;
+  const passo = Math.pow(10, Math.floor(Math.log10(max))); const tick = [1, 2, 2.5, 5, 10].map(m => m * passo).find(t => max / t <= 5);
+  const y = v => pt + (H - pt - pb) * (1 - v / max);
+  const bw = (W - pl - pr) / rotulos.length;
+  let s = `<svg class="graf" viewBox="0 0 ${W} ${H}" role="img">`;
+  for (let t = 0; t <= max; t += tick){ s += `<line class="grade-l" x1="${pl}" x2="${W - pr}" y1="${y(t)}" y2="${y(t)}"/><text x="${pl - 6}" y="${y(t) + 4}" text-anchor="end">${fmt(t)}${unidade}</text>`; }
+  rotulos.forEach((r, i) => {
+    const x0 = pl + i * bw;
+    if (empilhar){ let acc = 0; series.forEach(se => { const v = se.v[i]; s += `<rect class="${se.c}" x="${x0 + bw * .18}" y="${y(acc + v)}" width="${bw * .64}" height="${Math.max(0, y(acc) - y(acc + v))}" rx="2"><title>${esc(r)} · ${esc(se.n)}: ${fmt(v)}</title></rect>`; acc += v; }); }
+    else { const n = series.length, w = bw * .7 / n; series.forEach((se, k) => { const v = se.v[i]; s += `<rect class="${se.c}" x="${x0 + bw * .15 + k * w}" y="${y(v)}" width="${w - 1}" height="${Math.max(0, y(0) - y(v))}" rx="2"><title>${esc(r)} · ${esc(se.n)}: ${fmt(v)}</title></rect>`; }); }
+    if (rotulos.length <= 16 || i % 2 === 0) s += `<text x="${x0 + bw / 2}" y="${H - 8}" text-anchor="middle">${esc(r)}</text>`;
+  });
+  if (linha){ const pts = linha.v.map((v, i) => `${pl + i * bw + bw / 2},${y(v)}`).join(' '); s += `<polyline class="${linha.c || 'l2'}" points="${pts}"/>`; }
+  return s + '</svg>';
+}
+function grafLinha({ rotulos, v, meta, altura = 180, unidade = '' }){
+  const W = 640, H = altura, pl = 46, pr = 12, pt = 12, pb = 26;
+  const max = Math.max(...v, meta || 0) * 1.15 || 1, min = 0;
+  const passo = Math.pow(10, Math.floor(Math.log10(max))); const tick = [1, 2, 2.5, 5, 10].map(m => m * passo).find(t => max / t <= 5);
+  const x = i => pl + (W - pl - pr) * (i / (v.length - 1)), y = val => pt + (H - pt - pb) * (1 - (val - min) / (max - min));
+  let s = `<svg class="graf" viewBox="0 0 ${W} ${H}" role="img">`;
+  for (let t = 0; t <= max; t += tick) s += `<line class="grade-l" x1="${pl}" x2="${W - pr}" y1="${y(t)}" y2="${y(t)}"/><text x="${pl - 6}" y="${y(t) + 4}" text-anchor="end">${fmt(t)}${unidade}</text>`;
+  const pts = v.map((val, i) => `${x(i)},${y(val)}`).join(' ');
+  s += `<polygon class="a1" points="${x(0)},${y(0)} ${pts} ${x(v.length - 1)},${y(0)}"/><polyline class="l1" points="${pts}"/>`;
+  if (meta) s += `<line class="l2" x1="${pl}" x2="${W - pr}" y1="${y(meta)}" y2="${y(meta)}"/>`;
+  const ul = v.length - 1; s += `<circle cx="${x(ul)}" cy="${y(v[ul])}" r="4" fill="var(--agua)"/>`;
+  rotulos.forEach((r, i) => { if (i % Math.ceil(rotulos.length / 8) === 0) s += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${esc(r)}</text>`; });
+  return s + '</svg>';
+}
+
+// ---------- configuração do porto (o que muda de um porto para outro) ----------
+const CARGAS = { gusa: 'Ferro-gusa', bobina: 'Bobinas de aço', graos: 'Grãos', fertil: 'Fertilizantes', conteiner: 'Contêineres', carga_proj: 'Carga de projeto', celulose: 'Celulose' };
+const PADRAO = { nome: 'Terminal Baía Serena', cidade: 'Porto fictício', bercos: 4, turnos: '2x12', cargas: ['gusa', 'bobina', 'graos', 'fertil'], modal: ['rodo', 'ferro'], metaDia: 18000 };
+let CFG = Object.assign({}, PADRAO, ls.get('cfg', {}));
+
+// ---------- dados fictícios (gerados a partir da configuração) ----------
+let D;
+function gerar(){
+  const r = rng(20261114 + CFG.bercos * 7 + CFG.cargas.length * 13);
+  const pick = a => a[Math.floor(r() * a.length)];
+  const cargas = CFG.cargas.length ? CFG.cargas : ['gusa'];
+  const clientes = ['Siderúrgica Vale Norte', 'Agro Planalto', 'Metalúrgica Atlântica', 'Fertisul Insumos', 'Celulose Rio Claro', 'Trading Oceano'];
+  const navios = ['MV AURORA STAR', 'MV KESTREL BAY', 'MV NORDIC PEARL', 'MV OCEAN TITAN', 'MV SANTA LUZIA', 'MV CAPE MERIDIAN', 'MV IRON HARMONY', 'MV GOLDEN TIDE', 'MV PACIFIC LARK'];
+  const turnosDia = CFG.turnos === '3x8' ? ['00–08', '08–16', '16–24'] : ['07–19', '19–07'];
+  // berços e navios
+  const bercos = Array.from({ length: CFG.bercos }, (_, i) => ({ id: 'B' + (i + 1), nome: 'Berço ' + (101 + i), calado: [12.5, 13.8, 11.2, 14.5, 10.8, 13.0][i % 6], comp: [220, 250, 190, 280, 180, 240][i % 6] }));
+  const lineup = navios.slice(0, CFG.bercos + 4).map((n, i) => {
+    const carga = cargas[i % cargas.length], emb = i % 3 !== 1;
+    const status = i < CFG.bercos - (CFG.bercos > 2 ? 1 : 0) ? 'Operando' : (i < CFG.bercos ? 'Atracando' : (i < CFG.bercos + 2 ? 'Fundeado' : 'Previsto'));
+    const total = Math.round((18 + r() * 42) * 1000), feito = status === 'Operando' ? Math.round(total * (.2 + r() * .7)) : 0;
+    const eta = new Date(2026, 10, 14 + (i - CFG.bercos + 1) * (i >= CFG.bercos ? 1 : 0) - (i < CFG.bercos ? 2 : 0), 6 + Math.floor(r() * 14));
+    return { navio: n, berco: i < CFG.bercos ? bercos[i].nome : '—', bi: i < CFG.bercos ? i : -1, carga: CARGAS[carga], op: emb ? 'Embarque' : 'Descarga', cliente: pick(clientes), total, feito, status, eta, loa: 170 + Math.round(r() * 100), prancha: Math.round(9000 + r() * 12000) };
+  });
+  // recebimento (agendamentos rodo/ferro)
+  const placas = Array.from({ length: 64 }, () => 'ABCDEFGHJKLMNPRSTUVWXYZ'[Math.floor(r() * 23)] + 'ABCDEFGHJKLMNPRSTUVWXYZ'[Math.floor(r() * 23)] + 'ABCDEFGHJKLMNPRSTUVWXYZ'[Math.floor(r() * 23)] + Math.floor(r() * 10) + 'ABCDEFGHJ'[Math.floor(r() * 9)] + Math.floor(10 + r() * 89));
+  const etapas = ['Agendada', 'No pátio de triagem', 'Na balança', 'Descarregando', 'Concluída'];
+  const agend = placas.slice(0, 28).map((p, i) => { const h = 6 + Math.floor(i / 2.4); const st = i < 12 ? 'Concluída' : pick(etapas.slice(0, 4)); return { placa: p, cliente: pick(clientes), carga: CARGAS[pick(cargas)], janela: String(h).padStart(2, '0') + ':' + (i % 2 ? '30' : '00'), nf: (28 + r() * 10).toFixed(2), modal: CFG.modal.includes('ferro') && i % 5 === 0 ? 'Ferroviário' : 'Rodoviário', status: st }; });
+  const gateHora = Array.from({ length: 18 }, (_, i) => ({ h: String(6 + i).padStart(2, '0') + 'h', entrada: Math.round(4 + r() * 14 + (i > 2 && i < 12 ? 6 : 0)), saida: Math.round(3 + r() * 13 + (i > 3 && i < 13 ? 6 : 0)) }));
+  // carretas em ciclo
+  const fases = ['Fila do gate', 'Triagem', 'Balança entrada', 'Descarga', 'Balança saída', 'Retorno'];
+  const carretas = placas.slice(10, 44).map((p, i) => { const f = pick(fases); const ciclo = Math.round(55 + r() * 95); return { placa: p, transp: pick(['TransLog Serra', 'Rodo Atlântico', 'Via Cargas', 'Frota própria']), fase: f, ciclo, viagens: 1 + Math.floor(r() * 8), ultima: String(6 + Math.floor(r() * 12)).padStart(2, '0') + ':' + String(Math.floor(r() * 60)).padStart(2, '0'), alerta: ciclo > 130 }; });
+  // descarga e pesagem (lotes/trens)
+  const lotes = Array.from({ length: 9 }, (_, i) => { const nf = Math.round(900 + r() * 6200); const dif = (r() - .55) * 6; const pes = nf * (1 + dif / 100); const st = i < 6 ? 'Finalizado' : (i < 8 ? 'Descarregando' : 'Na fila'); return { lote: ['TRM', 'KR', 'LT'][i % 3] + (4100 + i * 6), cor: ['AZUL', 'VERDE', 'BEGE', 'VERMELHO', 'LARANJA'][i % 5], navio: lineup[i % Math.max(1, CFG.bercos)].navio, nf, pesado: st === 'Na fila' ? 0 : (st === 'Descarregando' ? pes * (.3 + r() * .5) : pes), viagens: st === 'Na fila' ? 0 : Math.round(pes / 31), inicio: `${12 + Math.floor(i / 2)}/11 ${String(Math.floor(r() * 24)).padStart(2, '0')}:00`, status: st }; });
+  const horaDescarga = Array.from({ length: 24 }, (_, i) => Math.round((CFG.metaDia / 24) * (.55 + r() * .75) * (i >= 11 && i <= 12 ? .5 : 1)));
+  // inventário
+  const patios = Array.from({ length: 12 }, (_, i) => { const cap = [6000, 8000, 5000, 7000][i % 4]; const oc = Math.round(cap * r() * .98); const c = cargas[i % cargas.length]; return { id: (i < 6 ? 'P8-' : 'P9-') + String.fromCharCode(65 + i % 6), carga: CARGAS[c], cliente: clientes[i % clientes.length], cap, oc, entrada: Math.round(r() * 1400), saida: Math.round(r() * 1200), idade: Math.round(2 + r() * 40) }; });
+  // expedição
+  const ordens = Array.from({ length: 10 }, (_, i) => { const t = Math.round(300 + r() * 2200); const f = Math.round(t * r()); return { ordem: 'OE-' + (8820 + i), cliente: pick(clientes), carga: CARGAS[pick(cargas)], destino: pick(['Usina Ipiranga (MG)', 'CD Anápolis (GO)', 'Fábrica Resende (RJ)', 'Cliente final (SP)', 'Terminal ferroviário']), modal: CFG.modal.includes('ferro') && i % 3 === 0 ? 'Ferroviário' : 'Rodoviário', total: t, feito: f, prazo: `${15 + i % 4}/11`, status: f >= t * .98 ? 'Concluída' : (i % 4 === 0 ? 'Atrasada' : 'Em carregamento') }; });
+  // embarque (navio no berço 1 de embarque)
+  const navEmb = lineup.find(n => n.op === 'Embarque' && n.status === 'Operando') || lineup[0];
+  const poroes = Array.from({ length: 5 }, (_, i) => { const plano = Math.round(navEmb.total / 5 * (.85 + r() * .3)); return { porao: 'H' + (i + 1), plano, feito: Math.round(plano * (.25 + r() * .75)) }; });
+  const prodTurno = Array.from({ length: 8 }, (_, i) => ({ t: (i % turnosDia.length === 0 ? `${12 + Math.floor(i / turnosDia.length)}/11 ` : '') + turnosDia[i % turnosDia.length], prog: Math.round(navEmb.prancha / turnosDia.length * 1.05), real: Math.round(navEmb.prancha / turnosDia.length * (.65 + r() * .5)) }));
+  // equipe
+  const funcoes = ['Operador de guindaste', 'Operador de empilhadeira', 'Conferente', 'Sinaleiro', 'Motorista', 'Auxiliar de operação', 'Técnico de segurança'];
+  const equipe = funcoes.map(f => { const esc = Math.round(6 + r() * 26); const pres = Math.round(esc * (.82 + r() * .18)); const aloc = Math.round(pres * (.7 + r() * .3)); return { funcao: f, escalados: esc, presentes: pres, alocados: aloc, extra: Math.round(r() * 22) }; });
+  const extraDia = Array.from({ length: 14 }, (_, i) => Math.round(30 + r() * 90));
+  // equipamentos
+  const tipos = [['GD', 'Guindaste móvel'], ['EM', 'Empilhadeira'], ['PC', 'Pá carregadeira'], ['ES', 'Escavadeira'], ['RS', 'Reach stacker']];
+  const frota = Array.from({ length: 22 }, (_, i) => { const [s, t] = tipos[i % 5]; const st = r(); return { id: s + '-' + String(10 + i).padStart(3, '0'), tipo: t, status: st < .58 ? 'Em operação' : (st < .82 ? 'Disponível' : 'Em manutenção'), horimetro: Math.round(1200 + r() * 14000), check: Math.round(r() * 30), comb: Math.round(10 + r() * 90), local: bercos[i % bercos.length].nome }; });
+  const chamados = frota.filter(f => f.status === 'Em manutenção').map((f, i) => ({ n: 'CH-' + (20400 + i * 7), equip: f.id, motivo: pick(['Vazamento hidráulico', 'Não dá partida', 'Pneu furado', 'Câmera de ré inoperante', 'Ar-condicionado', 'Freio de serviço']), aberto: `${Math.round(1 + r() * 30)} h`, prioridade: pick(['Alta', 'Média', 'Baixa']) }));
+  // SMS
+  const sms = { diasSemAcidente: 47 + Math.floor(r() * 30), ocorrencias: [
+    { t: 'Quase acidente', d: 'Carreta manobrando próxima a pedestre na triagem', q: '14/11 06:40', g: 'Média' },
+    { t: 'Atendimento médico', d: 'Colaborador com mal-estar no berço, liberado após avaliação', q: '13/11 15:20', g: 'Baixa' },
+    { t: 'Desvio de EPI', d: 'Operador sem óculos na área de descarga', q: '13/11 09:05', g: 'Baixa' },
+    { t: 'Acidente material', d: 'Retrovisor de empilhadeira danificado em manobra', q: '12/11 22:10', g: 'Média' },
+    { t: 'Parada de segurança', d: 'DDS de chuva forte com toda a equipe do turno', q: '12/11 07:00', g: 'Info' }],
+    aso: Math.round(4 + r() * 12), trein: Math.round(10 + r() * 30), semCheck: frota.filter(f => f.check > 24).length };
+  D = { bercos, lineup, agend, gateHora, carretas, fases, lotes, horaDescarga, patios, ordens, navEmb, poroes, prodTurno, turnosDia, equipe, extraDia, frota, chamados, sms };
+}
+
+// ---------- módulos ----------
+const IC = {
+  inicio: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
+  bercos: '<path d="M2 18c2 1.5 4 1.5 6 0s4-1.5 6 0 4 1.5 6 0M5 14l2-6h10l2 6M9 8V4h6v4"/>',
+  receb: '<path d="M3 7h11v9H3zM14 10h4l3 3v3h-7M7 19a2 2 0 1 0 0-.1M17 19a2 2 0 1 0 0-.1"/>',
+  carretas: '<path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4M12 8v4l3 2"/>',
+  descarga: '<path d="M4 20h16M6 20V9l6-5 6 5v11M10 20v-5h4v5"/>',
+  invent: '<path d="M3 21V9l9-5 9 5v12M7 21v-7h10v7M7 17h10"/>',
+  exped: '<path d="M3 12h13M12 7l5 5-5 5M20 4v16"/>',
+  embarque: '<path d="M3 15h18l-3 5H6zM12 15V3M12 3l6 7H12"/>',
+  equipe: '<path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-1a6 6 0 0 1 12 0v1M17 11a3 3 0 1 0 0-6M22 21v-1a5 5 0 0 0-4-4.9"/>',
+  equip: '<path d="M4 18V8l5-3v13M9 9h7l3 4v5H4M7 18a2 2 0 1 0 0 .1M16 18a2 2 0 1 0 0 .1"/>',
+  sms: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z M9 12l2 2 4-4"/>',
+  config: '<path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12l2-1-1-3-2 .3-1.4-1.4L17 5l-3-1-1 2h-2L10 4 7 5l.4 2-1.4 1.4L4 8 3 11l2 1v0l-2 1 1 3 2-.3 1.4 1.4L7 19l3 1 1-2h2l1 2 3-1-.4-2 1.4-1.4 2 .4 1-3z"/>'
+};
+const MODULOS = [
+  { id: 'inicio', g: 'Visão', t: 'Painel executivo', ic: 'inicio' },
+  { id: 'bercos', g: 'Navios', t: 'Berços e navios', ic: 'bercos' },
+  { id: 'embarque', g: 'Navios', t: 'Embarque', ic: 'embarque' },
+  { id: 'recebimento', g: 'Cargas', t: 'Recebimento', ic: 'receb' },
+  { id: 'carretas', g: 'Cargas', t: 'Controle de carretas', ic: 'carretas' },
+  { id: 'descarga', g: 'Cargas', t: 'Descarga e pesagem', ic: 'descarga' },
+  { id: 'inventario', g: 'Cargas', t: 'Inventário de pátios', ic: 'invent' },
+  { id: 'expedicao', g: 'Cargas', t: 'Expedição de carga', ic: 'exped' },
+  { id: 'equipe', g: 'Recursos', t: 'Gestão de equipe', ic: 'equipe' },
+  { id: 'equipamentos', g: 'Recursos', t: 'Equipamentos', ic: 'equip' },
+  { id: 'sms', g: 'Recursos', t: 'Segurança (SMS)', ic: 'sms' },
+  { id: 'porto', g: 'Implantação', t: 'Adaptar ao seu porto', ic: 'config' }
+];
+function montarNav(atual){
+  let h = '', g = '';
+  MODULOS.forEach(m => { if (m.g !== g){ g = m.g; h += `<div class="grupo">${g}</div>`; } h += `<a href="#${m.id}" ${m.id === atual ? 'aria-current="page"' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${IC[m.ic]}</svg>${m.t}</a>`; });
+  $('#nav').innerHTML = h;
+  $('#nomePorto').textContent = CFG.nome;
+  $('#descPorto').textContent = `${CFG.cidade} · ${CFG.bercos} berço${CFG.bercos > 1 ? 's' : ''} · turnos ${CFG.turnos}`;
+}
+const cab = (eb, t, p, ctrl = '') => `<div class="aviso"><span><b>Demonstração Portum.</b> Porto, navios, clientes e números são fictícios e gerados para mostrar o sistema.</span><span>Atualizado 14/11/2026 15:40</span></div><div class="cab"><div><div class="eyebrow">${eb}</div><h1>${t}</h1><p>${p}</p></div><div class="ctrl">${ctrl}</div></div>`;
+const stNavio = s => chip(s, { Operando: 'ok', Atracando: 'in', Fundeado: 'at', Previsto: 'ne' }[s]);
+
+const V = {};
+V.inicio = () => {
+  const op = D.lineup.filter(n => n.status === 'Operando');
+  const movDia = D.horaDescarga.reduce((s, v) => s + v, 0);
+  const ocup = D.patios.reduce((s, p) => s + p.oc, 0) / D.patios.reduce((s, p) => s + p.cap, 0) * 100;
+  const disp = D.frota.filter(f => f.status !== 'Em manutenção').length / D.frota.length * 100;
+  const aloc = D.equipe.reduce((s, e) => s + e.alocados, 0) / D.equipe.reduce((s, e) => s + e.presentes, 0) * 100;
+  const sinal = (v, bom, med) => v >= bom ? 'ok' : (v >= med ? 'at' : 'cr');
+  const pil = [
+    ['bercos', 'Berços e navios', `${op.length} operando · ${D.lineup.filter(n => n.status === 'Fundeado').length} fundeados`, sinal(op.length / CFG.bercos * 100, 70, 40), 'Ocupação ' + fmt(op.length / CFG.bercos * 100) + '%'],
+    ['descarga', 'Descarga e pesagem', `${fmt(movDia)} t movimentadas hoje`, sinal(movDia / CFG.metaDia * 100, 95, 80), fmt(movDia / CFG.metaDia * 100) + '% da meta'],
+    ['inventario', 'Inventário de pátios', `${D.patios.length} baias controladas`, sinal(100 - ocup, 15, 5), 'Ocupação ' + fmt(ocup) + '%'],
+    ['equipamentos', 'Equipamentos', `${D.chamados.length} chamados abertos`, sinal(disp, 85, 75), 'Disponível ' + fmt(disp) + '%'],
+    ['equipe', 'Gestão de equipe', `${D.equipe.reduce((s, e) => s + e.presentes, 0)} pessoas no turno`, sinal(aloc, 85, 70), 'Alocação ' + fmt(aloc) + '%'],
+    ['sms', 'Segurança (SMS)', `${D.sms.diasSemAcidente} dias sem acidente com afastamento`, D.sms.aso > 10 ? 'at' : 'ok', D.sms.aso + ' ASO vencendo']
+  ];
+  return cab('Visão do dia · ' + CFG.nome, 'Painel executivo', 'Os seis pilares da operação em semáforo. Clique em um pilar para abrir o módulo.') +
+  `<div class="kpis">${kpi('Navios operando', op.length, `de ${CFG.bercos} berços`)}${kpi('Movimentado hoje', fmt(movDia / 1000, 1), 'mil t', '▲ ' + fmt(movDia / CFG.metaDia * 100) + '% da meta diária', movDia >= CFG.metaDia ? 'up' : 'down')}${kpi('Carretas no ciclo', D.carretas.length, '', 'ciclo médio ' + fmt(D.carretas.reduce((s, c) => s + c.ciclo, 0) / D.carretas.length) + ' min')}${kpi('Estoque nos pátios', fmt(D.patios.reduce((s, p) => s + p.oc, 0) / 1000, 1), 'mil t', fmt(ocup) + '% da capacidade')}</div>
+  <div class="pilares">${pil.map(p => `<a class="pilar" href="#${p[0]}"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>${p[1]}</b>${chip(p[4], p[3])}</div><p>${p[2]}</p></a>`).join('')}</div>
+  <div class="grade"><section class="painel c8"><h2>Movimentação por hora <small>t/h hoje · linha tracejada = meta</small></h2>${grafBarras({ rotulos: D.horaDescarga.map((_, i) => String(i).padStart(2, '0')), series: [{ n: 'Movimentado', c: 's1', v: D.horaDescarga }], linha: { v: D.horaDescarga.map(() => CFG.metaDia / 24) } })}</section>
+  <section class="painel c4"><h2>Line-up <small>próximos navios</small></h2><ul class="lista">${D.lineup.slice(0, 6).map(n => `<li><div><b>${n.navio}</b><div class="q">${n.op} · ${n.carga}</div></div>${stNavio(n.status)}</li>`).join('')}</ul></section></div>`;
+};
+V.bercos = () => {
+  const W = 640, H = 230, comp = (W - 40) / CFG.bercos;
+  let mapa = `<svg class="graf" viewBox="0 0 ${W} ${H}" role="img" aria-label="Mapa do cais"><rect x="0" y="0" width="${W}" height="150" fill="var(--info-bg)"/><path d="M0 40 q20 -6 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0" stroke="var(--agua-2)" stroke-opacity=".35" fill="none"/><rect x="0" y="150" width="${W}" height="80" fill="var(--sup-2)"/><line x1="0" x2="${W}" y1="150" y2="150" stroke="var(--tx-3)" stroke-width="3"/>`;
+  D.bercos.forEach((b, i) => {
+    const x = 20 + i * comp; mapa += `<text x="${x + comp / 2}" y="175" text-anchor="middle" style="font-weight:600;fill:var(--tx-2)">${b.nome}</text><text x="${x + comp / 2}" y="192" text-anchor="middle">calado ${fmt(b.calado, 1)} m</text>`;
+    for (let k = 0; k <= 4; k++) mapa += `<circle cx="${x + k * comp / 4}" cy="150" r="3" fill="var(--tx-3)"/>`;
+    const n = D.lineup.find(l => l.bi === i);
+    if (n){ const w = comp * .82, nx = x + comp * .09; const cor = n.status === 'Operando' ? 'var(--agua)' : 'var(--boia)';
+      mapa += `<g><title>${n.navio} · ${n.status}</title><path d="M${nx} 140 L${nx + w - 18} 140 L${nx + w} 122 L${nx + w - 18} 104 L${nx} 104 Z" fill="${cor}" opacity=".9"/><rect x="${nx + 10}" y="108" width="${Math.min(30, w * .2)}" height="14" rx="2" fill="var(--sup)" opacity=".85"/><text x="${nx + w / 2}" y="98" text-anchor="middle" style="font-weight:600;fill:var(--tx)">${n.navio.replace('MV ', '')}</text><text x="${nx + w / 2 + 6}" y="127" text-anchor="middle" style="fill:#fff;font-weight:600">${fmt(n.feito / n.total * 100)}%</text></g>`; }
+  });
+  D.lineup.filter(n => n.status === 'Fundeado').forEach((n, k) => { mapa += `<g><title>${n.navio} · fundeado</title><ellipse cx="${80 + k * 150}" cy="40" rx="34" ry="9" fill="var(--boia)" opacity=".75"/><text x="${80 + k * 150}" y="22" text-anchor="middle">${n.navio.replace('MV ', '')} · fundeado</text></g>`; });
+  mapa += '</svg>';
+  return cab('Navios', 'Berços e navios', 'Mapa do cais, line-up e ocupação dos berços. O mesmo quadro alimenta o painel executivo e o planejamento da equipe.') +
+  `<div class="kpis">${kpi('Berços ocupados', D.lineup.filter(n => n.bi >= 0).length + '/' + CFG.bercos)}${kpi('Fundeados', D.lineup.filter(n => n.status === 'Fundeado').length, 'navios', 'espera média 31 h', 'down')}${kpi('Previstos 7 dias', D.lineup.filter(n => n.status === 'Previsto').length, 'navios')}${kpi('Prancha média', fmt(D.lineup.filter(n => n.status === 'Operando').reduce((s, n) => s + n.prancha, 0) / Math.max(1, D.lineup.filter(n => n.status === 'Operando').length)), 't/dia')}</div>
+  <section class="painel"><h2>Mapa do cais <small>agora · % = carga já operada</small></h2>${mapa}<div class="legenda"><span><i style="background:var(--agua)"></i>Operando</span><span><i style="background:var(--boia)"></i>Atracando / fundeado</span></div></section>
+  <section class="painel"><h2>Line-up <small>${D.lineup.length} navios</small></h2>${tabela([
+    { t: 'Navio', f: n => `<b>${esc(n.navio)}</b>` }, { t: 'Berço', k: 'berco' }, { t: 'Operação', k: 'op' }, { t: 'Carga', k: 'carga' }, { t: 'Cliente', k: 'cliente' },
+    { t: 'Total (t)', n: 1, f: n => fmt(n.total) }, { t: 'Operado', f: n => n.feito ? `<div style="display:flex;gap:8px;align-items:center">${barra(n.feito / n.total * 100)}<span class="mono">${fmt(n.feito / n.total * 100)}%</span></div>` : '<span class="muted">—</span>' },
+    { t: 'ETA/ATB', n: 1, f: n => n.eta.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) }, { t: 'Situação', f: n => stNavio(n.status) }], D.lineup)}</section>`;
+};
+V.embarque = () => {
+  const n = D.navEmb, tp = D.poroes.reduce((s, p) => s + p.plano, 0), tf = D.poroes.reduce((s, p) => s + p.feito, 0);
+  const ritmo = D.prodTurno.slice(-D.turnosDia.length).reduce((s, t) => s + t.real, 0); const etc = (tp - tf) / Math.max(1, ritmo) * 24;
+  return cab('Navios · shipping planning', 'Embarque · ' + n.navio, 'Plano por porão, produção por turno contra o programado e previsão de término pelo ritmo real.') +
+  `<div class="kpis">${kpi('Embarcado', fmt(tf), 't', fmt(tf / tp * 100) + '% do plano')}${kpi('Saldo', fmt(tp - tf), 't')}${kpi('Ritmo últimas 24 h', fmt(ritmo), 't/dia', ritmo >= n.prancha ? '▲ acima da prancha' : '▼ abaixo da prancha contratada', ritmo >= n.prancha ? 'up' : 'down')}${kpi('Término previsto', fmt(etc, 0), 'h', 'pelo ritmo real')}</div>
+  <div class="grade"><section class="painel c6"><h2>Porões <small>plano × embarcado (t)</small></h2>${grafBarras({ rotulos: D.poroes.map(p => p.porao), series: [{ n: 'Plano', c: 's3', v: D.poroes.map(p => p.plano) }, { n: 'Embarcado', c: 's1', v: D.poroes.map(p => p.feito) }] })}<div class="legenda"><span><i style="background:var(--tx-3);opacity:.35"></i>Plano</span><span><i style="background:var(--agua)"></i>Embarcado</span></div></section>
+  <section class="painel c6"><h2>Produção por turno <small>programado × realizado (t)</small></h2>${grafBarras({ rotulos: D.prodTurno.map(t => t.t.split(' ').pop()), series: [{ n: 'Programado', c: 's3', v: D.prodTurno.map(t => t.prog) }, { n: 'Realizado', c: 's2', v: D.prodTurno.map(t => t.real) }] })}<div class="legenda"><span><i style="background:var(--tx-3);opacity:.35"></i>Programado</span><span><i style="background:var(--boia)"></i>Realizado</span></div></section></div>
+  <section class="painel"><h2>Saldo por porão</h2>${tabela([{ t: 'Porão', k: 'porao' }, { t: 'Plano (t)', n: 1, f: p => fmt(p.plano) }, { t: 'Embarcado (t)', n: 1, f: p => fmt(p.feito) }, { t: 'Saldo (t)', n: 1, f: p => fmt(p.plano - p.feito) }, { t: 'Andamento', f: p => barra(p.feito / p.plano * 100) }, { t: 'Situação', f: p => p.feito / p.plano > .97 ? chip('Completo', 'ok') : chip('Carregando', 'in') }], D.poroes)}</section>`;
+};
+V.recebimento = () => {
+  const filtro = ls.get('fRec', 'Todos');
+  const lst = D.agend.filter(a => filtro === 'Todos' || a.status === filtro);
+  const cls = { Agendada: 'ne', 'No pátio de triagem': 'at', 'Na balança': 'in', Descarregando: 'in', Concluída: 'ok' };
+  return cab('Cargas · entrada', 'Recebimento', 'Agendamentos do dia, janela de chegada, nota fiscal e onde cada veículo está no fluxo do gate até a descarga.',
+    `<label class="muted" for="fRec">Situação</label><select id="fRec">${['Todos', 'Agendada', 'No pátio de triagem', 'Na balança', 'Descarregando', 'Concluída'].map(s => `<option ${s === filtro ? 'selected' : ''}>${s}</option>`).join('')}</select>`) +
+  `<div class="kpis">${kpi('Agendados hoje', D.agend.length, 'veículos')}${kpi('Concluídos', D.agend.filter(a => a.status === 'Concluída').length, '', 'no prazo da janela: 92%', 'up')}${kpi('Em trânsito interno', D.agend.filter(a => !['Agendada', 'Concluída'].includes(a.status)).length)}${kpi('Tempo médio no gate', '18', 'min', '▼ 4 min contra a semana', 'up')}</div>
+  <div class="grade"><section class="painel c7"><h2>Agendamentos <small>${lst.length} de ${D.agend.length}</small></h2>${tabela([{ t: 'Janela', k: 'janela' }, { t: 'Placa', f: a => `<span class="mono">${a.placa}</span>` }, { t: 'Cliente', k: 'cliente' }, { t: 'Carga', k: 'carga' }, { t: 'Modal', k: 'modal' }, { t: 'NF (t)', n: 1, f: a => fmt(a.nf, 2) }, { t: 'Situação', f: a => chip(a.status, cls[a.status]) }], lst)}</section>
+  <section class="painel c5"><h2>Gate por hora <small>entradas × saídas</small></h2>${grafBarras({ rotulos: D.gateHora.map(g => g.h.replace('h', '')), series: [{ n: 'Entradas', c: 's1', v: D.gateHora.map(g => g.entrada) }, { n: 'Saídas', c: 's2', v: D.gateHora.map(g => g.saida) }], altura: 240 })}<div class="legenda"><span><i style="background:var(--agua)"></i>Entradas</span><span><i style="background:var(--boia)"></i>Saídas</span></div></section></div>`;
+};
+V.carretas = () => {
+  const sel = ls.get('selCar', 0); const c = D.carretas[sel] || D.carretas[0];
+  const porFase = D.fases.map(f => D.carretas.filter(x => x.fase === f).length);
+  const marcos = ['Entrada no gate', 'Triagem e documentos', 'Pesagem de entrada', 'Início da descarga', 'Pesagem de saída', 'Saída do terminal'];
+  const [hh, mm] = c.ultima.split(':').map(Number); let t = hh * 60 + mm - c.ciclo; const passo = c.ciclo / (marcos.length - 1);
+  return cab('Cargas · rodoviário', 'Controle de carretas', 'Onde está cada carreta, quanto tempo leva o ciclo e quem passou do limite. Clique em uma placa para ver o ciclo dela.') +
+  `<div class="kpis">${kpi('Carretas no terminal', D.carretas.length)}${kpi('Ciclo médio', fmt(D.carretas.reduce((s, x) => s + x.ciclo, 0) / D.carretas.length), 'min', 'histórico: 96 min', 'neu')}${kpi('Acima de 130 min', D.carretas.filter(x => x.alerta).length, 'carretas', 'acionar transportadora', 'down')}${kpi('Viagens hoje', D.carretas.reduce((s, x) => s + x.viagens, 0))}</div>
+  <section class="painel"><h2>Carretas por etapa do ciclo</h2>${grafBarras({ rotulos: D.fases, series: [{ n: 'Carretas', c: 's1', v: porFase }], altura: 170 })}</section>
+  <div class="grade"><section class="painel c8"><h2>Frota no ciclo</h2>${tabela([{ t: 'Placa', f: x => `<span class="mono">${x.placa}</span>` }, { t: 'Transportadora', k: 'transp' }, { t: 'Etapa', k: 'fase' }, { t: 'Ciclo (min)', n: 1, f: x => x.alerta ? `<b style="color:var(--cr)">${x.ciclo}</b>` : x.ciclo }, { t: 'Viagens', n: 1, k: 'viagens' }, { t: 'Última pesagem', n: 1, k: 'ultima' }, { t: '', f: x => x.alerta ? chip('Atrasada', 'cr') : chip('No tempo', 'ok') }], D.carretas, { clic: 1 })}</section>
+  <section class="painel c4"><h2>Ciclo da ${c.placa}</h2><div class="detalhe">${esc(c.transp)} · ${c.viagens} viagens hoje · ciclo ${c.ciclo} min</div><ol class="linha-tempo">${marcos.map((m, i) => { const mi = Math.round(t + i * passo); return `<li><span>${String(Math.floor(((mi % 1440) + 1440) % 1440 / 60)).padStart(2, '0')}:${String(((mi % 60) + 60) % 60).padStart(2, '0')}</span><i></i><p>${m}</p></li>`; }).join('')}</ol></section></div>`;
+};
+V.descarga = () => {
+  const dif = l => l.pesado && l.status === 'Finalizado' ? (l.pesado - l.nf) / l.nf * 100 : null;
+  const mov = D.horaDescarga.reduce((s, v) => s + v, 0);
+  return cab('Cargas · ferroviário e rodoviário', 'Descarga e pesagem', 'Cada lote ou trem com a nota fiscal contra o peso da balança. Diferença acima de 3% fica em vermelho para conferência.') +
+  `<div class="kpis">${kpi('Descarregado hoje', fmt(mov), 't', fmt(mov / CFG.metaDia * 100) + '% da meta de ' + fmt(CFG.metaDia) + ' t', mov >= CFG.metaDia ? 'up' : 'down')}${kpi('Lotes finalizados', D.lotes.filter(l => l.status === 'Finalizado').length)}${kpi('Descarregando agora', D.lotes.filter(l => l.status === 'Descarregando').length, 'lotes')}${kpi('Diferença NF × balança', fmt(D.lotes.filter(l => l.status === 'Finalizado').reduce((s, l) => s + l.pesado - l.nf, 0) / D.lotes.filter(l => l.status === 'Finalizado').reduce((s, l) => s + l.nf, 0) * 100, 2), '%', 'tolerância ±3%')}</div>
+  <section class="painel"><h2>Ritmo de descarga <small>t/h nas últimas 24 h · tracejado = meta</small></h2>${grafLinha({ rotulos: D.horaDescarga.map((_, i) => String(i).padStart(2, '0') + 'h'), v: D.horaDescarga, meta: CFG.metaDia / 24 })}</section>
+  <section class="painel"><h2>Lotes e trens <small>NF × balança</small></h2>${tabela([{ t: 'Lote', f: l => `<b class="mono">${l.lote}</b>` }, { t: 'Cor', k: 'cor' }, { t: 'Navio', k: 'navio' }, { t: 'Início', n: 1, k: 'inicio' }, { t: 'Peso NF (t)', n: 1, f: l => fmt(l.nf) }, { t: 'Pesado (t)', n: 1, f: l => l.pesado ? fmt(l.pesado, 2) : '—' }, { t: 'Viagens', n: 1, k: 'viagens' }, { t: 'Diferença', f: l => { const d = dif(l); return d == null ? '<span class="muted">—</span>' : chip((d > 0 ? '+' : '') + fmt(d, 2) + '%', Math.abs(d) > 3 ? 'cr' : (Math.abs(d) > 1.5 ? 'at' : 'ok')); } }, { t: 'Situação', f: l => chip(l.status, { Finalizado: 'ok', Descarregando: 'in', 'Na fila': 'ne' }[l.status]) }], D.lotes)}</section>`;
+};
+V.inventario = () => {
+  const sel = ls.get('selBaia', 0), p = D.patios[sel] || D.patios[0];
+  const tot = D.patios.reduce((s, x) => s + x.oc, 0), cap = D.patios.reduce((s, x) => s + x.cap, 0);
+  const porCarga = {}; D.patios.forEach(x => porCarga[x.carga] = (porCarga[x.carga] || 0) + x.oc);
+  return cab('Cargas · armazenagem', 'Inventário de pátios', 'Saldo por baia, por cliente e por carga, com entrada e saída do dia. Clique numa baia para o detalhe.') +
+  `<div class="kpis">${kpi('Estoque total', fmt(tot), 't')}${kpi('Ocupação', fmt(tot / cap * 100), '%', fmt(cap - tot) + ' t livres')}${kpi('Entradas hoje', fmt(D.patios.reduce((s, x) => s + x.entrada, 0)), 't')}${kpi('Saídas hoje', fmt(D.patios.reduce((s, x) => s + x.saida, 0)), 't')}</div>
+  <div class="grade"><section class="painel c8"><h2>Planta dos pátios <small>cor = ocupação</small></h2><div class="patios">${D.patios.map((x, i) => { const pc = x.oc / x.cap * 100; return `<button class="baia" data-baia="${i}" aria-pressed="${i === sel}"><b>${x.id}</b><span>${esc(x.carga)}</span>${barra(pc, pc > 90 ? 'r' : (pc > 70 ? 'b' : ''))}<span class="mono">${fmt(x.oc)} / ${fmt(x.cap)} t</span></button>`; }).join('')}</div></section>
+  <section class="painel c4"><h2>Baia ${p.id}</h2><div class="detalhe"><b>${esc(p.carga)}</b> · ${esc(p.cliente)}</div><ul class="lista"><li><span>Saldo</span><b class="mono">${fmt(p.oc)} t</b></li><li><span>Capacidade</span><span class="mono">${fmt(p.cap)} t</span></li><li><span>Entrada hoje</span><span class="mono up">+${fmt(p.entrada)} t</span></li><li><span>Saída hoje</span><span class="mono down">−${fmt(p.saida)} t</span></li><li><span>Idade média do estoque</span><span class="mono">${p.idade} dias</span></li></ul>${p.idade > 30 ? chip('Estoque parado há mais de 30 dias', 'at') : ''}</section></div>
+  <section class="painel"><h2>Estoque por carga</h2>${tabela([{ t: 'Carga', k: 'c' }, { t: 'Estoque (t)', n: 1, f: r => fmt(r.v) }, { t: 'Participação', f: r => `<div style="display:flex;gap:8px;align-items:center">${barra(r.v / tot * 100)}<span class="mono">${fmt(r.v / tot * 100)}%</span></div>` }], Object.entries(porCarga).map(([c, v]) => ({ c, v })).sort((a, b) => b.v - a.v))}</section>`;
+};
+V.expedicao = () => {
+  const cls = { 'Concluída': 'ok', 'Atrasada': 'cr', 'Em carregamento': 'in' };
+  const tot = D.ordens.reduce((s, o) => s + o.total, 0), f = D.ordens.reduce((s, o) => s + o.feito, 0);
+  return cab('Cargas · saída', 'Expedição de carga', 'Ordens de expedição por cliente e destino, com o carregado contra o programado e as que estão fora do prazo.') +
+  `<div class="kpis">${kpi('Ordens abertas', D.ordens.filter(o => o.status !== 'Concluída').length)}${kpi('Expedido', fmt(f), 't', fmt(f / tot * 100) + '% do programado')}${kpi('Atrasadas', D.ordens.filter(o => o.status === 'Atrasada').length, 'ordens', 'avisar o cliente', 'down')}${kpi('Rodo × ferro', D.ordens.filter(o => o.modal === 'Rodoviário').length + ' × ' + D.ordens.filter(o => o.modal === 'Ferroviário').length)}</div>
+  <section class="painel"><h2>Ordens de expedição</h2>${tabela([{ t: 'Ordem', f: o => `<b class="mono">${o.ordem}</b>` }, { t: 'Cliente', k: 'cliente' }, { t: 'Carga', k: 'carga' }, { t: 'Destino', k: 'destino' }, { t: 'Modal', k: 'modal' }, { t: 'Programado (t)', n: 1, f: o => fmt(o.total) }, { t: 'Carregado', f: o => `<div style="display:flex;gap:8px;align-items:center">${barra(o.feito / o.total * 100, o.status === 'Atrasada' ? 'r' : '')}<span class="mono">${fmt(o.feito)} t</span></div>` }, { t: 'Prazo', n: 1, k: 'prazo' }, { t: 'Situação', f: o => chip(o.status, cls[o.status]) }], D.ordens)}</section>`;
+};
+V.equipe = () => {
+  const tp = D.equipe.reduce((s, e) => s + e.presentes, 0), te = D.equipe.reduce((s, e) => s + e.escalados, 0), ta = D.equipe.reduce((s, e) => s + e.alocados, 0);
+  return cab('Recursos · pessoas', 'Gestão de equipe', `Escala, presença e alocação por função no turno, sobra que pode ser emprestada e horas extras. Turnos configurados: ${D.turnosDia.join(' · ')}.`) +
+  `<div class="kpis">${kpi('Escalados', te)}${kpi('Presentes', tp, '', fmt(tp / te * 100) + '% da escala', tp / te > .9 ? 'up' : 'down')}${kpi('Alocados em frentes', ta, '', fmt(ta / tp * 100) + '% dos presentes')}${kpi('Sem frente agora', tp - ta, 'pessoas', 'disponíveis para remanejar', 'neu')}</div>
+  <div class="grade"><section class="painel c7"><h2>Por função <small>turno atual</small></h2>${tabela([{ t: 'Função', k: 'funcao' }, { t: 'Escalados', n: 1, k: 'escalados' }, { t: 'Presentes', n: 1, k: 'presentes' }, { t: 'Alocados', n: 1, k: 'alocados' }, { t: 'Alocação', f: e => barra(e.alocados / e.presentes * 100) }, { t: 'Extra (h/semana)', n: 1, f: e => e.extra > 16 ? `<b style="color:var(--cr)">${e.extra}</b>` : e.extra }], D.equipe)}</section>
+  <section class="painel c5"><h2>Horas extras <small>últimos 14 dias</small></h2>${grafBarras({ rotulos: D.extraDia.map((_, i) => String(1 + i)), series: [{ n: 'Horas extras', c: 's2', v: D.extraDia }], linha: { v: D.extraDia.map(() => 70) }, altura: 220, unidade: 'h' })}<p class="muted" style="margin:0">Tracejado: limite combinado com a gerência (70 h/dia).</p></section></div>`;
+};
+V.equipamentos = () => {
+  const cls = { 'Em operação': 'in', 'Disponível': 'ok', 'Em manutenção': 'cr' };
+  const disp = D.frota.filter(f => f.status !== 'Em manutenção').length;
+  return cab('Recursos · frota', 'Equipamentos', 'Situação da frota, chamados de manutenção, checklist e combustível. Equipamento sem checklist há mais de 24 h aparece em alerta.') +
+  `<div class="kpis">${kpi('Disponibilidade', fmt(disp / D.frota.length * 100), '%', disp + ' de ' + D.frota.length + ' equipamentos')}${kpi('Em operação', D.frota.filter(f => f.status === 'Em operação').length)}${kpi('Chamados abertos', D.chamados.length, '', 'MTTR 6,4 h', 'neu')}${kpi('Sem checklist > 24 h', D.sms.semCheck, '', 'bloquear até o checklist', D.sms.semCheck ? 'down' : 'up')}</div>
+  <div class="grade"><section class="painel c8"><h2>Frota</h2>${tabela([{ t: 'Equip.', f: f => `<b class="mono">${f.id}</b>` }, { t: 'Tipo', k: 'tipo' }, { t: 'Local', k: 'local' }, { t: 'Horímetro', n: 1, f: f => fmt(f.horimetro) }, { t: 'Checklist', n: 1, f: f => f.check > 24 ? `<b style="color:var(--cr)">${f.check} h</b>` : f.check + ' h' }, { t: 'Combustível', f: f => barra(f.comb, f.comb <= 25 ? 'r' : '') }, { t: 'Situação', f: f => chip(f.status, cls[f.status]) }], D.frota)}</section>
+  <section class="painel c4"><h2>Chamados abertos</h2><ul class="lista">${D.chamados.map(c => `<li><div><b class="mono">${c.equip}</b> · ${esc(c.motivo)}<div class="q">${c.n} · aberto há ${c.aberto}</div></div>${chip(c.prioridade, { Alta: 'cr', 'Média': 'at', Baixa: 'ne' }[c.prioridade])}</li>`).join('') || '<li class="muted">Nenhum chamado aberto.</li>'}</ul></section></div>`;
+};
+V.sms = () => cab('Recursos · segurança, meio ambiente e saúde', 'Segurança (SMS)', 'Ocorrências comunicadas pelas equipes, ASO e treinamentos vencendo e equipamentos sem checklist, num quadro só.') +
+  `<div class="kpis">${kpi('Dias sem acidente com afastamento', D.sms.diasSemAcidente, 'dias', 'recorde: 212', 'neu')}${kpi('ASO vencendo em 30 dias', D.sms.aso, 'pessoas', '', D.sms.aso > 10 ? 'down' : 'neu')}${kpi('Treinamentos vencidos', D.sms.trein, 'pessoas alocadas', '', 'down')}${kpi('Equip. sem checklist', D.sms.semCheck)}</div>
+  <div class="grade"><section class="painel c7"><h2>Ocorrências recentes</h2><ul class="lista">${D.sms.ocorrencias.map(o => `<li><div><b>${o.t}</b><div>${esc(o.d)}</div><div class="q">${o.q}</div></div>${chip(o.g, { 'Média': 'at', Baixa: 'ne', Info: 'in' }[o.g])}</li>`).join('')}</ul></section>
+  <section class="painel c5"><h2>Pirâmide de segurança <small>últimos 90 dias</small></h2>${grafBarras({ rotulos: ['Afast.', 'Sem afast.', 'Material', 'Quase acid.', 'Desvios'], series: [{ n: 'Ocorrências', c: 's1', v: [0, 2, 5, 14, 41] }], altura: 210 })}<p class="muted" style="margin:0">Mais registros na base da pirâmide = cultura de reporte forte.</p></section></div>`;
+V.porto = () => cab('Implantação', 'Adaptar ao seu porto', 'Cada porto tem seus berços, cargas, turnos e meta. Mude abaixo e todos os módulos se reorganizam. Na implantação real, essas regras vêm do cadastro e das integrações do porto (balança, ERP, gate, ponto).') +
+  `<section class="painel"><h2>Perfil do porto</h2><form id="fCfg" class="config">
+    <label for="cNome">Nome do terminal<input type="text" id="cNome" value="${esc(CFG.nome)}" maxlength="40"></label>
+    <label for="cCidade">Local<input type="text" id="cCidade" value="${esc(CFG.cidade)}" maxlength="40"></label>
+    <label for="cBercos">Número de berços<input type="number" id="cBercos" min="1" max="6" value="${CFG.bercos}"></label>
+    <label for="cMeta">Meta diária de movimentação (t)<input type="number" id="cMeta" min="1000" step="500" value="${CFG.metaDia}"></label>
+    <label for="cTurnos">Regime de turnos<select id="cTurnos"><option value="2x12" ${CFG.turnos === '2x12' ? 'selected' : ''}>2 turnos de 12 h</option><option value="3x8" ${CFG.turnos === '3x8' ? 'selected' : ''}>3 turnos de 8 h</option></select></label>
+    <div style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px"><span class="muted" style="font-size:12.5px">Cargas operadas</span><div class="checks">${Object.entries(CARGAS).map(([k, v]) => `<label><input type="checkbox" name="carga" value="${k}" ${CFG.cargas.includes(k) ? 'checked' : ''}>${v}</label>`).join('')}</div></div>
+    <div style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px"><span class="muted" style="font-size:12.5px">Modais</span><div class="checks"><label><input type="checkbox" name="modal" value="rodo" ${CFG.modal.includes('rodo') ? 'checked' : ''}>Rodoviário</label><label><input type="checkbox" name="modal" value="ferro" ${CFG.modal.includes('ferro') ? 'checked' : ''}>Ferroviário</label></div></div>
+    <div style="grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap"><button class="prim" type="submit">Aplicar ao demo</button><button type="button" id="cPadrao">Voltar ao padrão</button></div>
+  </form></section>
+  <div class="grade"><section class="painel c6"><h2>O que se adapta</h2><ul class="lista">
+    <li><span>Berços, calados e cabeços do cais</span>${chip('Cadastro', 'in')}</li><li><span>Tipos de carga, unidades e tolerância NF × balança</span>${chip('Cadastro', 'in')}</li><li><span>Turnos, escalas e regras de hora extra</span>${chip('Cadastro', 'in')}</li><li><span>Balanças, gate, ERP, ponto e sistema portuário</span>${chip('Integração', 'at')}</li><li><span>Marca do cliente nos relatórios e no portal do cliente</span>${chip('Cadastro', 'in')}</li></ul></section>
+  <section class="painel c6"><h2>Implantação em etapas</h2><ol class="linha-tempo">${[['Sem. 1–2', 'Diagnóstico: fluxos, sistemas existentes e indicadores que a diretoria acompanha'], ['Sem. 3–4', 'Cadastro do porto e primeiros módulos com planilhas e exportações atuais'], ['Sem. 5–8', 'Integrações com balança, gate e sistema portuário; treinamento das equipes'], ['Sem. 9+', 'Painel executivo, relatórios ao cliente e melhorias contínuas']].map(e => `<li><span>${e[0]}</span><i></i><p>${e[1]}</p></li>`).join('')}</ol></section></div>`;
+
+// ---------- roteamento e eventos ----------
+function render(){
+  const id = (location.hash || '#inicio').slice(1); const m = MODULOS.find(x => x.id === id) ? id : 'inicio';
+  montarNav(m); $('#tela').innerHTML = V[m](); ls.set('ultima', m);
+}
+document.addEventListener('change', e => { if (e.target.id === 'fRec'){ ls.set('fRec', e.target.value); render(); } });
+document.addEventListener('click', e => {
+  const tr = e.target.closest('tr.clic'); if (tr && location.hash === '#carretas'){ ls.set('selCar', +tr.dataset.i); render(); return; }
+  const b = e.target.closest('[data-baia]'); if (b){ ls.set('selBaia', +b.dataset.baia); render(); return; }
+  if (e.target.id === 'cPadrao'){ CFG = Object.assign({}, PADRAO); ls.set('cfg', CFG); gerar(); render(); toast('Configuração padrão restaurada'); }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Enter'){ const tr = e.target.closest && e.target.closest('tr.clic'); if (tr) tr.click(); } });
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'fCfg') return; e.preventDefault();
+  const cargas = [...document.querySelectorAll('input[name=carga]:checked')].map(i => i.value);
+  const modal = [...document.querySelectorAll('input[name=modal]:checked')].map(i => i.value);
+  CFG = { nome: $('#cNome').value.trim() || PADRAO.nome, cidade: $('#cCidade').value.trim() || PADRAO.cidade, bercos: Math.max(1, Math.min(6, +$('#cBercos').value || 4)), turnos: $('#cTurnos').value, metaDia: Math.max(1000, +$('#cMeta').value || 18000), cargas: cargas.length ? cargas : ['gusa'], modal: modal.length ? modal : ['rodo'] };
+  ls.set('cfg', CFG); gerar(); render(); toast('Demo ajustado para ' + CFG.nome);
+});
+window.addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
+gerar();
+if (!location.hash){ const u = ls.get('ultima', 'inicio'); if (u !== 'inicio') history.replaceState(null, '', '#' + u); }
+render();
+})();
+</script>
+
+</body>
+</html>

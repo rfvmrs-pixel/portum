@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Portum">
+  <!-- Símbolo Portum: o "P" é um cabeço de atracação (haste) com o cabo de amarração (laço),
+       a boia âmbar marca o ponto de atracação e as duas ondas são a lâmina d'água do cais. -->
+  <defs><clipPath id="pc"><rect width="64" height="64" rx="15"/></clipPath></defs>
+  <g clip-path="url(#pc)">
+    <rect width="64" height="64" fill="#0B2540"/>
+    <rect x="17" y="11" width="7.5" height="33" rx="2" fill="#FFFFFF"/>
+    <path d="M23 14.75 H33.5 A11.25 11.25 0 0 1 33.5 37.25 H23" fill="none" stroke="#FFFFFF" stroke-width="7.5"/>
+    <circle cx="33.5" cy="26" r="3.6" fill="#F2A93B"/>
+    <path d="M-2 50 q5.5 -4.5 11 0 t11 0 t11 0 t11 0 t11 0 t11 0" fill="none" stroke="#2BA3A3" stroke-width="3.2" stroke-linecap="round"/>
+    <path d="M-7.5 57 q5.5 -4.5 11 0 t11 0 t11 0 t11 0 t11 0 t11 0 t11 0" fill="none" stroke="#2BA3A3" stroke-opacity=".55" stroke-width="3.2" stroke-linecap="round"/>
+  </g>
+</svg>
