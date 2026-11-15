@@ -455,20 +455,24 @@ function iniciarMapa() {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(MAPA);
     CAMADA = L.layerGroup().addTo(MAPA);
     buscarNavios();
-    const inp = $('#buscaPorto'), sug = $('#sugPorto'); let tmr = null, achados = [];
+    const inp = $('#buscaPorto'), sug = $('#sugPorto'); let tmr = null, achados = [], vez = 0;
+    const escolher = p => { vez++; clearTimeout(tmr); achados = []; sug.hidden = true; inp.value = p.nome; irParaPorto(p); };
+    // do Nominatim só servem portos, cidades e regiões (não ruas, lojas etc.)
+    const lugarServe = x => /^(harbour|port|city|town|village|municipality|administrative|island|bay|county|state)$/.test(x.type) || /^(place|boundary)$/.test(x.class) || (x.class === 'landuse' && /port|harbour|industrial/.test(x.type));
     const mostrar = () => { sug.hidden = !achados.length; sug.innerHTML = achados.map((p, i) => '<button type="button" data-p="' + i + '"><span>' + esc(p.nome) + '</span><small>' + esc(p.pais || '') + '</small></button>').join(''); };
     inp.addEventListener('input', () => {
       const q = semAcento(inp.value.trim()); clearTimeout(tmr);
       if (q.length < 2) { achados = []; return mostrar(); }
       achados = PORTOS.filter(p => semAcento(p[0] + ' ' + p[1]).includes(q)).slice(0, 8).map(p => ({ nome: p[0], pais: p[1], lat: p[2], lon: p[3] }));
       mostrar();
+      const minhaVez = ++vez;
       if (q.length >= 3) tmr = setTimeout(() => {
-        fetch('https://nominatim.openstreetmap.org/search?format=json&limit=5&accept-language=pt-BR&q=' + encodeURIComponent(inp.value.trim()))
-          .then(r => r.json()).then(js => { const extra = js.map(x => ({ nome: x.display_name.split(',').slice(0, 2).join(','), pais: (x.display_name.split(',').pop() || '').trim(), lat: +x.lat, lon: +x.lon })); achados = achados.concat(extra.filter(e => !achados.some(a => Math.abs(a.lat - e.lat) < .05 && Math.abs(a.lon - e.lon) < .05))).slice(0, 10); mostrar(); }).catch(() => {});
+        fetch('https://nominatim.openstreetmap.org/search?format=json&limit=10&accept-language=pt-BR&q=' + encodeURIComponent(inp.value.trim()))
+          .then(r => r.json()).then(js => { if (minhaVez !== vez || document.activeElement !== inp) return; const extra = js.filter(lugarServe).slice(0, 5).map(x => ({ nome: x.display_name.split(',').slice(0, 2).join(','), pais: (x.display_name.split(',').pop() || '').trim(), lat: +x.lat, lon: +x.lon })); achados = achados.concat(extra.filter(e => !achados.some(a => Math.abs(a.lat - e.lat) < .05 && Math.abs(a.lon - e.lon) < .05))).slice(0, 10); mostrar(); }).catch(() => {});
       }, 500);
     });
-    inp.addEventListener('keydown', e => { if (e.key === 'Enter' && achados[0]) { e.preventDefault(); sug.hidden = true; inp.value = achados[0].nome; irParaPorto(achados[0]); } if (e.key === 'Escape') sug.hidden = true; });
-    sug.addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (!b) return; const p = achados[+b.dataset.p]; sug.hidden = true; inp.value = p.nome; irParaPorto(p); });
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter' && achados[0]) { e.preventDefault(); escolher(achados[0]); inp.blur(); } if (e.key === 'Escape') sug.hidden = true; });
+    sug.addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (!b) return; escolher(achados[+b.dataset.p]); });
     document.addEventListener('click', e => { if (!e.target.closest('.busca')) sug.hidden = true; });
     $('#btAtualizarNavios').addEventListener('click', () => buscarNavios(true));
     MAPA.on('moveend', () => { const c0 = MAPA.getCenter(); $('#mtPorto').href = linkMTporto(c0.lat, c0.lng); });
