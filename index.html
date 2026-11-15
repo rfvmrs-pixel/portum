@@ -674,7 +674,8 @@ function navioSVG() {
   const vao = j => xPorao(j) - gap / 2;      // vão à esquerda do porão j (0-based)
   const alvos = [...ativos];
   for (let g = 0; g < 4; g++) {
-    const px = vao(g), alvo = alvos.find(i => i === g || i === g + 1);
+    // guindaste Gk atende o porão k (à sua direita) e, se ele não estiver ativo, o porão k+1
+    const px = vao(g), alvo = alvos.includes(g) ? g : (alvos.includes(g + 1) ? g + 1 : undefined);
     if (alvo !== undefined) alvos.splice(alvos.indexOf(alvo), 1);
     const ativo = !recolher && R.estado === 'operando' && alvo !== undefined, parado = R.estado === 'parado';
     const topo = 150, piv = [px, topo - 8], L = 132;
