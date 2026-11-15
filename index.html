@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Portum - Sistema Integrado de Gestão portuária. Demonstração com dados fictícios e mapa de navios com AIS ao vivo.">
+<meta name="description" content="Portum - Sistema Integrado de Gestão portuária. Demonstração com dados fictícios, embarque ao vivo e mapa de navios com AIS.">
 <link rel="icon" type="image/svg+xml" href="marca/portum-simbolo.svg">
 <style>body{margin:0}</style>
 <title>Portum</title>
@@ -159,6 +159,27 @@ svg.graf .a1{fill:var(--agua);opacity:.14}
 .leaflet-popup-content{font-family:var(--f-tx);font-size:12.5px;line-height:1.45}
 .leaflet-popup-content b{font-size:13.5px}
 .nv-ic{background:transparent;border:0}
+.vivo{padding:0;overflow:hidden}
+.vivo-cab{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:14px 16px 10px}
+.vivo-cab h2{margin:0}
+.navio-svg{display:block;width:100%;height:auto;background:#BFE3F2}
+.vivo-rod{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;padding:10px 16px 14px;border-top:1px solid var(--linha);font-size:12.5px;color:var(--tx-2)}
+.sit-op{background:#1E8A55;border-color:#1E8A55;color:#fff;font-weight:600}
+.sit-par{background:#C2413A;border-color:#C2413A;color:#fff;font-weight:600}
+.navio-svg .cacamba{animation:cacamba 4.2s ease-in-out infinite;transform-box:fill-box}
+.navio-svg .cabo{animation:cabo 4.2s ease-in-out infinite;transform-box:fill-box;transform-origin:top}
+@keyframes cacamba{0%,100%{transform:translateY(0)}45%,55%{transform:translateY(calc(var(--sobe) * -1))}}
+@keyframes cabo{0%,100%{transform:scaleY(1)}45%,55%{transform:scaleY(var(--enc))}}
+.navio-svg .fumaca{animation:fumaca 5s linear infinite;transform-box:fill-box;transform-origin:center}
+.navio-svg .f2{animation-delay:1.7s}.navio-svg .f3{animation-delay:3.4s}
+@keyframes fumaca{0%{transform:translate(0,0) scale(.6);opacity:.55}100%{transform:translate(-46px,-48px) scale(2.4);opacity:0}}
+.navio-svg .onda{animation:onda 6s linear infinite}.navio-svg .o2{animation-duration:9s;animation-direction:reverse}
+@keyframes onda{to{transform:translateX(-50px)}}
+.navio-svg .balanco{animation:balanco 7s ease-in-out infinite;transform-origin:600px 300px}
+@keyframes balanco{0%,100%{transform:rotate(0)}50%{transform:rotate(.25deg) translateY(1.5px)}}
+.navio-svg .brilho{animation:brilho 1.6s ease-in-out infinite}
+@keyframes brilho{0%,100%{opacity:.25}50%{opacity:1}}
+@media (prefers-reduced-motion: reduce){.navio-svg *{animation:none!important}}
 @media (max-width:1000px){.mapa-wrap{grid-template-columns:minmax(0,1fr)} #mapaNavios{height:420px} .c4,.c5,.c6,.c7,.c8{grid-column:span 12}}
 @media (max-width:820px){
   .app{grid-template-columns:minmax(0,1fr)}
@@ -178,7 +199,7 @@ svg.graf .a1{fill:var(--agua);opacity:.14}
     <div class="marca" id="marca"></div>
     <div class="porto"><span>Ambiente de demonstração</span><b id="nomePorto">Terminal Baía Serena</b><span id="descPorto">Porto fictício · 4 berços</span></div>
     <nav id="nav" aria-label="Módulos"></nav>
-    <div class="rodape-lat">Portum · demo v4 · mapa com AIS ao vivo</div>
+    <div class="rodape-lat">Portum · demo v5 · embarque ao vivo</div>
   </aside>
   <main><div class="wrap" id="tela"></div></main>
 </div>
@@ -541,10 +562,183 @@ V.bercos = () => {
     { t: 'Total (t)', n: 1, f: n => fmt(n.total) }, { t: 'Operado', f: n => n.feito ? `<div style="display:flex;gap:8px;align-items:center">${barra(n.feito / n.total * 100)}<span class="mono">${fmt(n.feito / n.total * 100)}%</span></div>` : '<span class="muted">—</span>' },
     { t: 'ETA/ATB', n: 1, f: n => n.eta.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) }, { t: 'Situação', f: n => stNavio(n.status) }], D.lineup)}</section>`;
 };
+// ---------- Navio operando ao vivo (Embarque) ----------
+let SIM = null, SIM_TIMER = null, SIM_FORM = false;
+const MOTIVOS_PARADA = ['Chuva', 'Aguardando carreta', 'Aguardando carga no pátio', 'Quebra de guindaste / equipamento', 'Troca de porão', 'Refeição / troca de turno', 'Aguardando liberação / documentos', 'Condição do navio (lastro, calado, tripulação)', 'Outro'];
+const T_CACAMBA = 22.5;
+function simIniciar() {
+  const nv = D.navEmb, plano = D.poroes.map(p => p.plano), car = D.poroes.map(p => p.feito);
+  SIM = { navio: nv.navio, carga: nv.carga, cliente: nv.cliente, plano, car, estado: 'operando', motivo: '', desde: Date.now(), inicioHora: car.reduce((s, v) => s + v, 0), inicio: Date.now(), paradas: [] };
+}
+// porões com guindaste trabalhando: até 4 guindastes, nos porões com mais saldo
+function simAtivos() {
+  if (!SIM || SIM.estado !== 'operando') return [];
+  return SIM.plano.map((p, i) => ({ i, saldo: p - SIM.car[i] })).filter(x => x.saldo > p0(x.i)).sort((a, b) => b.saldo - a.saldo).slice(0, 4).map(x => x.i);
+}
+const p0 = i => SIM.plano[i] * 0.005;
+function simTique() {
+  if (!SIM || SIM.estado !== 'operando') return;
+  simAtivos().forEach(i => { SIM.car[i] = Math.min(SIM.plano[i], SIM.car[i] + T_CACAMBA * (0.35 + Math.random() * 0.4)); });
+  if (simAtivos().length === 0) { SIM.estado = 'finalizado'; }
+  const el = document.getElementById('navioVivo'); if (!el) { clearInterval(SIM_TIMER); return; }
+  el.innerHTML = navioSVG();
+  const k = document.getElementById('kpiVivo'); if (k) k.innerHTML = kpisVivo();
+}
+function kpisVivo() {
+  const tp = SIM.plano.reduce((s, v) => s + v, 0), tf = SIM.car.reduce((s, v) => s + v, 0);
+  const ativos = simAtivos().length, ritmo = ativos * 2 * T_CACAMBA * 12;   // ~2 caçambas por minuto e por guindaste (demonstração)
+  const falta = tp - tf, horas = ritmo ? falta / (ritmo / 24) : null;
+  const fim = horas != null ? new Date(Date.now() + horas * 3600e3) : null;
+  return kpi('Embarcado', fmt(tf), 't', fmt(tf / tp * 100, 1) + '% do plano') +
+    kpi('Saldo', fmt(falta), 't', fmt(Math.ceil(falta / T_CACAMBA)) + ' caçambas') +
+    kpi('Guindastes trabalhando', ativos, 'de 4', SIM.estado === 'parado' ? 'parado: ' + esc(SIM.motivo) : '', SIM.estado === 'parado' ? 'down' : 'neu') +
+    kpi('Término previsto', fim ? fim.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—', '', fim ? 'pelo ritmo atual' : (SIM.estado === 'finalizado' ? 'embarque concluído' : 'navio parado'));
+}
+function navioSVG() {
+  const R = SIM, n = R.plano.length, W = 1200, H = 420;
+  const x0 = 300, x1 = 1040, gap = 16, larg = (x1 - x0 - gap * (n - 1)) / n;
+  const conv = 206, agua = 300, jT = 214, jB = 292, jA = jB - jT;
+  const xPorao = i => x1 - (i + 1) * larg - i * gap;     // porão 1 junto da proa (direita)
+  const ativos = simAtivos(), emOper = i => ativos.includes(i);
+  const recolher = R.estado === 'finalizado';
+  const P = pts => 'M' + pts.map(p => p.map(v => Math.round(v * 10) / 10).join(' ')).join(' L') + ' Z';
+  const corCarga = /gr[aã]o/i.test(R.carga) ? ['#E2B65A', '#B8862E'] : /fertil/i.test(R.carga) ? ['#F1EEE6', '#C9C3B4'] : /bobina|a[cç]o/i.test(R.carga) ? ['#9AA3AD', '#5E6773'] : ['#4A4B51', '#1B1C20'];
+  let s = '<svg class="navio-svg" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(R.navio) + ': ' + R.plano.map((p, i) => 'porão ' + (i + 1) + ' ' + Math.round(R.car[i] / p * 100) + '%').join(', ') + '">';
+  s += '<defs><linearGradient id="vCeu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8FCBEA"/><stop offset="1" stop-color="#D7EEF7"/></linearGradient>' +
+    '<linearGradient id="vAgua" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1F6F8B"/><stop offset="1" stop-color="#0C3550"/></linearGradient>' +
+    '<linearGradient id="vCasco" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1C3657"/><stop offset=".4" stop-color="#0C2748"/><stop offset="1" stop-color="#071A31"/></linearGradient>' +
+    '<linearGradient id="vVerm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9523F"/><stop offset="1" stop-color="#8A3226"/></linearGradient>' +
+    '<linearGradient id="vCreme" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F7F1E4"/><stop offset="1" stop-color="#D9CFBB"/></linearGradient>' +
+    '<linearGradient id="vGuin" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#C98A1E"/><stop offset=".5" stop-color="#F2B43B"/><stop offset="1" stop-color="#C98A1E"/></linearGradient>' +
+    '<pattern id="vCarga" width="9" height="9" patternUnits="userSpaceOnUse"><rect width="9" height="9" fill="' + corCarga[1] + '"/><circle cx="2.5" cy="3" r="1.6" fill="' + corCarga[0] + '"/><circle cx="7" cy="6.5" r="1.3" fill="' + corCarga[0] + '"/></pattern>' +
+    '<pattern id="vHach" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#E9E6E0"/><line x1="0" y1="0" x2="0" y2="7" stroke="#C9C4BA" stroke-width="1.6"/></pattern>' +
+    '<filter id="vNuvem" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="6"/></filter><filter id="vRefl"><feGaussianBlur stdDeviation="2.5"/></filter></defs>';
+  // céu, nuvens, morros e cidade
+  s += '<rect width="' + W + '" height="' + agua + '" fill="url(#vCeu)"/>';
+  s += '<g fill="#fff" filter="url(#vNuvem)" opacity=".85">' + [[180, 60, 110, 20], [330, 40, 80, 16], [620, 70, 140, 22], [860, 45, 100, 18], [1080, 90, 130, 20], [470, 110, 90, 14]].map(q => '<ellipse cx="' + q[0] + '" cy="' + q[1] + '" rx="' + q[2] + '" ry="' + q[3] + '"/>').join('') + '</g>';
+  s += '<path d="M600 300 L680 262 Q 790 214 900 240 Q 1010 200 1110 236 Q 1170 228 1200 240 L1200 300 Z" fill="#7FA9A0" opacity=".75"/>';
+  s += '<g fill="#9DB4C4" opacity=".8">' + [[640, 266, 30, 34], [690, 274, 46, 26], [760, 268, 34, 32], [820, 276, 52, 24], [1110, 280, 60, 20], [1150, 272, 40, 28]].map(b => '<rect x="' + b[0] + '" y="' + b[1] + '" width="' + b[2] + '" height="' + b[3] + '"/>').join('') + '</g>';
+  // água e ondas
+  s += '<rect y="' + agua + '" width="' + W + '" height="' + (H - agua) + '" fill="url(#vAgua)"/>';
+  const onda = (y, op, cls) => { let d = 'M-100 ' + y; for (let x = -100; x <= W + 100; x += 50) d += ' q 12.5 -3 25 0 t 25 0'; return '<path class="onda ' + cls + '" d="' + d + '" fill="none" stroke="#9FE3F0" stroke-width="1.6" opacity="' + op + '"/>'; };
+  s += onda(agua + 14, .45, 'o1') + onda(agua + 34, .3, 'o2') + onda(agua + 58, .22, 'o1') + onda(agua + 86, .16, 'o2');
+  // selo de situação e relógio
+  const rot = R.estado === 'operando' ? 'NAVIO OPERANDO' : R.estado === 'parado' ? 'NAVIO PARADO' + (R.motivo ? ' · ' + R.motivo.toUpperCase().slice(0, 30) : '') : 'EMBARQUE CONCLUÍDO';
+  const cS = { operando: '#1E8A55', parado: '#C2413A', finalizado: '#0C2748' }[R.estado], tw = rot.length * 9.4 + 46;
+  s += '<g transform="translate(12 12)"><rect width="' + tw + '" height="34" rx="8" fill="' + cS + '"/>' + (R.estado === 'operando' ? '<circle cx="18" cy="17" r="5" fill="#fff"><animate attributeName="opacity" values="1;.25;1" dur="1.4s" repeatCount="indefinite"/></circle>' : '<circle cx="18" cy="17" r="5" fill="rgba(255,255,255,.6)"/>') + '<text x="32" y="23" font-family="Montserrat,Segoe UI,sans-serif" font-weight="800" font-size="15" letter-spacing=".6" fill="#fff">' + esc(rot) + '</text></g>';
+  const agora = new Date();
+  s += '<g transform="translate(998 12)"><rect width="190" height="58" rx="10" fill="#0C2748" opacity=".94"/><rect width="5" height="58" rx="2" fill="#2EC7C0"/>' +
+    '<text id="relVivo" x="98" y="32" text-anchor="middle" font-family="IBM Plex Mono,Consolas,monospace" font-weight="500" font-size="25" fill="#fff">' + agora.toLocaleTimeString('pt-BR') + '</text>' +
+    '<text x="98" y="49" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="10.5" fill="rgba(255,255,255,.78)">' + agora.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' }) + ' · turno ' + (D.turnosDia.find(t => { const [a, b] = t.split('–').map(Number), h = agora.getHours(); return a < b ? h >= a && h < b : h >= a || h < b; }) || D.turnosDia[0]) + '</text></g>';
+  // ---- navio (popa à esquerda, proa à direita) ----
+  const casco = 'M110 ' + conv + ' L1068 ' + conv + ' Q 1150 190 1170 176 L1150 266 Q 1130 296 1092 ' + agua + ' L150 ' + agua + ' Q 118 296 112 262 Z';
+  let nv = '';
+  // reflexo
+  s += '<g opacity=".2" filter="url(#vRefl)" transform="translate(0 ' + (agua * 2) + ') scale(1 -1)"><path d="' + casco + '" fill="#071A31"/></g>';
+  // superestrutura, chaminé e fumaça
+  const ax = 140, aw = 135;
+  nv += '<rect x="' + ax + '" y="112" width="' + aw + '" height="' + (conv - 112) + '" fill="url(#vCreme)" stroke="#8C8577" stroke-width="1.2"/>';
+  for (let k = 0; k < 4; k++) { nv += '<line x1="' + ax + '" x2="' + (ax + aw) + '" y1="' + (132 + k * 19) + '" y2="' + (132 + k * 19) + '" stroke="#B9AF9C"/>'; for (let j = 0; j < 8; j++) nv += '<rect x="' + (ax + 8 + j * 16) + '" y="' + (118 + k * 19) + '" width="9" height="7" rx="1" fill="#2B3A4A"/>'; }
+  nv += '<rect x="' + (ax - 12) + '" y="98" width="' + (aw + 26) + '" height="14" fill="#EFE7D6" stroke="#8C8577" stroke-width="1.2"/>';
+  for (let j = 0; j < 11; j++) nv += '<rect x="' + (ax - 6 + j * 14) + '" y="101" width="10" height="7" fill="#1B2B3A"/>';
+  nv += '<line x1="200" y1="98" x2="200" y2="54" stroke="#C9C1AF" stroke-width="3"/><line x1="186" y1="66" x2="214" y2="66" stroke="#C9C1AF" stroke-width="3"/>';
+  nv += '<path d="' + P([[236, 70], [264, 70], [268, 98], [232, 98]]) + '" fill="#0C2748"/><rect x="234" y="80" width="32" height="6" fill="#2EC7C0"/>';
+  if (R.estado !== 'finalizado') nv += '<g fill="#8A96A3"><circle class="fumaca" cx="250" cy="66" r="7"/><circle class="fumaca f2" cx="250" cy="66" r="7"/><circle class="fumaca f3" cx="250" cy="66" r="7"/></g>';
+  // mastro de proa
+  nv += '<line x1="1110" y1="196" x2="1110" y2="96" stroke="#D9CFBB" stroke-width="4"/><line x1="1100" y1="118" x2="1120" y2="118" stroke="#D9CFBB" stroke-width="3"/>';
+  // casco, obras vivas e guarda-corpo
+  nv += '<path d="' + casco + '" fill="url(#vCasco)" stroke="#071A31" stroke-width="1.5" stroke-linejoin="round"/>';
+  nv += '<clipPath id="vClip"><path d="' + casco + '"/></clipPath><g clip-path="url(#vClip)"><rect x="0" y="262" width="' + W + '" height="40" fill="url(#vVerm)"/><rect x="0" y="259" width="' + W + '" height="3" fill="#071A31"/></g>';
+  nv += '<line x1="120" y1="' + (conv - 10) + '" x2="1068" y2="' + (conv - 10) + '" stroke="#5E7186" stroke-width="1.2"/>';
+  for (let x = 130; x < 1068; x += 22) nv += '<line x1="' + x + '" y1="' + (conv - 10) + '" x2="' + x + '" y2="' + (conv - 2) + '" stroke="#5E7186"/>';
+  const nome = R.navio.toUpperCase().replace(/^M\/?V\s+/, '');
+  nv += '<text x="1120" y="242" text-anchor="end" font-family="Montserrat,Segoe UI,sans-serif" font-weight="800" font-size="12.5" letter-spacing=".8" fill="#F2F2F3">' + esc(nome) + '</text>';
+  // porões
+  for (let i = 0; i < n; i++) {
+    const nro = i + 1, x = xPorao(i), plano = R.plano[i], cc = R.car[i], p = cc / plano, h = jA * Math.min(1, p), op = emOper(i);
+    const tx = x + 6, tw2 = larg - 12, ty = conv - 20;
+    nv += '<rect x="' + tx + '" y="' + ty + '" width="' + tw2 + '" height="12" fill="' + (op ? '#1E8A55' : '#3B5A7A') + '"/>';
+    for (let k = 1; k < 4; k++) nv += '<line x1="' + (tx + tw2 * k / 4) + '" x2="' + (tx + tw2 * k / 4) + '" y1="' + ty + '" y2="' + (ty + 12) + '" stroke="#0C2748"/>';
+    nv += '<rect x="' + x + '" y="' + jT + '" width="' + larg + '" height="' + jA + '" fill="url(#vHach)"/>';
+    if (h > 0) { const yt = jB - h, monte = Math.min(9, h * .45); nv += '<path d="M' + x + ' ' + jB + ' L' + x + ' ' + (yt + monte * .3) + ' Q ' + (x + larg / 2) + ' ' + (yt - monte) + ' ' + (x + larg) + ' ' + (yt + monte * .3) + ' L' + (x + larg) + ' ' + jB + ' Z" fill="url(#vCarga)"><title>Porão ' + nro + ': ' + fmt(cc) + ' t de ' + fmt(plano) + ' t</title></path>'; }
+    const bw = larg - 14, bx = x + 7, by = jT + 7, cheio = p >= 0.995, falta = Math.max(0, plano - cc);
+    nv += '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="9" rx="4.5" fill="#fff" stroke="#8C8577" stroke-width=".8"/><rect x="' + bx + '" y="' + by + '" width="' + (bw * Math.min(1, p)) + '" height="9" rx="4.5" fill="' + (cheio ? '#1E8A55' : '#2EA7B5') + '"/>';
+    nv += '<text x="' + (x + larg / 2) + '" y="' + (jT + 29) + '" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-weight="600" font-size="10" fill="#18191C" paint-order="stroke" stroke="#E9E6E0" stroke-width="3">' + (falta > 0 ? fmt(cc) + ' t · faltam ' + fmt(falta) + ' t' : fmt(cc) + ' t · completo') + '</text>';
+    nv += '<rect x="' + x + '" y="' + jT + '" width="' + larg + '" height="' + jA + '" fill="none" stroke="' + (op ? '#1E8A55' : '#071A31') + '" stroke-width="' + (op ? 3.2 : 2) + '"/>';
+    if (op) nv += '<rect class="brilho" x="' + (x - 3) + '" y="' + (jT - 3) + '" width="' + (larg + 6) + '" height="' + (jA + 6) + '" rx="3" fill="none" stroke="#5FD08F" stroke-width="2"/>';
+    const dentro = h >= 50;
+    nv += '<text x="' + (x + larg / 2) + '" y="' + (jT + 60) + '" text-anchor="middle" font-family="Montserrat,Segoe UI,sans-serif" font-weight="800" font-size="24" fill="' + (dentro ? '#fff' : '#18191C') + '"' + (dentro ? '' : ' paint-order="stroke" stroke="#E9E6E0" stroke-width="4"') + '>' + Math.round(p * 100) + '%</text>';
+    if (falta > 0) nv += '<text x="' + (x + larg / 2) + '" y="' + (jT + 74) + '" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-weight="700" font-size="10.5" fill="#18191C" paint-order="stroke" stroke="#E9E6E0" stroke-width="3">' + fmt(Math.ceil(falta / T_CACAMBA)) + ' caçambas</text>';
+  }
+  // guindastes de bordo nos vãos entre porões (G1 entre P1 e P2 ... G4 entre P4 e P5)
+  const vao = j => xPorao(j) - gap / 2;      // vão à esquerda do porão j (0-based)
+  const alvos = [...ativos];
+  for (let g = 0; g < 4; g++) {
+    const px = vao(g), alvo = alvos.find(i => i === g || i === g + 1);
+    if (alvo !== undefined) alvos.splice(alvos.indexOf(alvo), 1);
+    const ativo = !recolher && R.estado === 'operando' && alvo !== undefined, parado = R.estado === 'parado';
+    const topo = 150, piv = [px, topo - 8], L = 132;
+    let tip;
+    if (recolher) { const a = 7 * Math.PI / 180; tip = [px + (g % 2 ? 1 : -1) * Math.cos(a) * L, piv[1] - Math.sin(a) * L]; }
+    else if (ativo) { const ax2 = xPorao(alvo) + larg / 2, dx = Math.max(-L * .85, Math.min(L * .85, ax2 - px)); tip = [px + dx, piv[1] - Math.sqrt(L * L - dx * dx)]; }
+    else { const a = 72 * Math.PI / 180; tip = [px - Math.cos(a) * L, piv[1] - Math.sin(a) * L]; }
+    nv += '<g><title>G' + (g + 1) + (ativo ? ' · trabalhando no porão ' + (alvo + 1) : recolher ? ' · recolhido (embarque concluído)' : ' · parado') + '</title>';
+    nv += '<rect x="' + (px - 9) + '" y="' + topo + '" width="18" height="' + (conv - topo - 4) + '" fill="url(#vGuin)"/><ellipse cx="' + px + '" cy="' + topo + '" rx="11" ry="3.5" fill="#F2B43B"/>';
+    nv += '<rect x="' + (px - 13) + '" y="' + (topo - 16) + '" width="24" height="14" fill="#E09422"/><rect x="' + (px - 10) + '" y="' + (topo - 13) + '" width="8" height="6" fill="#1B2B3A"/>';
+    const ang = Math.atan2(tip[1] - piv[1], tip[0] - piv[0]), nx = -Math.sin(ang), ny = Math.cos(ang);
+    nv += '<g>' + (ativo ? '<animateTransform attributeName="transform" type="rotate" values="0 ' + piv[0] + ' ' + piv[1] + ';-3 ' + piv[0] + ' ' + piv[1] + ';0 ' + piv[0] + ' ' + piv[1] + ';2.5 ' + piv[0] + ' ' + piv[1] + ';0 ' + piv[0] + ' ' + piv[1] + '" dur="7s" begin="' + (g * 1.3) + 's" repeatCount="indefinite"/>' : '');
+    nv += '<path d="' + P([[piv[0] + nx * 5, piv[1] + ny * 5], [tip[0] + nx * 2, tip[1] + ny * 2], [tip[0] - nx * 2, tip[1] - ny * 2], [piv[0] - nx * 5, piv[1] - ny * 5]]) + '" fill="#E09422" stroke="' + (ativo ? '#1E8A55' : parado ? '#C2413A' : '#B8730C') + '" stroke-width="' + (ativo || parado ? 1.8 : 1) + '"/>';
+    for (let q = 1; q < 7; q++) { const t = q / 7, t2 = (q + .5) / 7; nv += '<line x1="' + (piv[0] + (tip[0] - piv[0]) * t + nx * (5 - 3 * t)) + '" y1="' + (piv[1] + (tip[1] - piv[1]) * t + ny * (5 - 3 * t)) + '" x2="' + (piv[0] + (tip[0] - piv[0]) * t2 - nx * (5 - 3 * t2)) + '" y2="' + (piv[1] + (tip[1] - piv[1]) * t2 - ny * (5 - 3 * t2)) + '" stroke="#B8730C" stroke-width=".8"/>'; }
+    nv += '<line x1="' + px + '" y1="' + (topo - 22) + '" x2="' + tip[0] + '" y2="' + tip[1] + '" stroke="#3A3B40" stroke-width=".8"/>';
+    if (ativo) {
+      const fundo = conv - 24, sobe = fundo - tip[1] - 40, enc = (tip[1] + 40 - tip[1]) / (fundo - tip[1]);
+      nv += '<line class="cabo" x1="' + tip[0] + '" y1="' + tip[1] + '" x2="' + tip[0] + '" y2="' + fundo + '" stroke="#2A2B30" stroke-width="1.3" style="--enc:' + enc.toFixed(3) + ';animation-delay:' + (g * .7) + 's"/>';
+      nv += '<g class="cacamba" style="--sobe:' + sobe + 'px;animation-delay:' + (g * .7) + 's"><path d="M' + (tip[0] - 9) + ' ' + fundo + ' h18 l-4 11 h-10 z" fill="#2EC7C0" stroke="#0C2748" stroke-width="1"/><circle cx="' + (tip[0] - 2) + '" cy="' + (fundo + 13) + '" r="1.9" fill="' + corCarga[1] + '"/><circle cx="' + (tip[0] + 2) + '" cy="' + (fundo + 13) + '" r="1.7" fill="' + corCarga[1] + '"/></g>';
+    } else {
+      const gh = recolher ? 10 : 46;
+      nv += '<line x1="' + tip[0] + '" y1="' + tip[1] + '" x2="' + tip[0] + '" y2="' + (tip[1] + gh) + '" stroke="#2A2B30"/><path d="M' + (tip[0] - 3) + ' ' + (tip[1] + gh) + ' h6 v6 q -3 5 -6 0 z" fill="#E09422"/>';
+    }
+    nv += '</g><g transform="translate(' + (px - 15) + ' ' + (conv + 2) + ')"><rect width="30" height="15" rx="4" fill="' + (ativo ? '#1E8A55' : parado ? '#C2413A' : '#0C2748') + '"/><text x="15" y="11" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-weight="700" font-size="10" fill="#fff">G' + (g + 1) + '</text></g></g>';
+  }
+  s += '<g class="balanco">' + nv + '</g>';
+  // etiquetas dos porões na água
+  for (let i = 0; i < n; i++) {
+    const x = xPorao(i), cx = x + larg / 2, op = emOper(i), plano = R.plano[i], cc = R.car[i], cheio = cc >= plano * 0.995, st = R.estado === 'parado' && !cheio;
+    s += '<rect x="' + (x + 4) + '" y="340" width="' + (larg - 8) + '" height="54" rx="7" fill="' + (op ? '#1E8A55' : '#FFFFFF') + '" opacity="' + (op ? 1 : .95) + '" stroke="' + (op ? '#1E8A55' : st ? '#C2413A' : '#B9C6D1') + '" stroke-width="' + (st ? 2 : 1) + '"/>';
+    if (op || st || cheio) s += '<rect x="' + (cx - 40) + '" y="330" width="80" height="16" rx="4" fill="' + (op ? '#0C2748' : st ? '#C2413A' : '#1E8A55') + '"/><text x="' + cx + '" y="342" text-anchor="middle" font-family="Montserrat,Segoe UI,sans-serif" font-weight="800" font-size="10.5" letter-spacing=".6" fill="#fff">' + (op ? 'TRABALHANDO' : st ? 'PARADO' : 'COMPLETO') + '</text>';
+    s += '<text x="' + cx + '" y="358" text-anchor="middle" font-family="Montserrat,Segoe UI,sans-serif" font-weight="800" font-size="14" fill="' + (op ? '#fff' : '#0C2748') + '">PORÃO ' + (i + 1) + '</text>';
+    s += '<text x="' + cx + '" y="374" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-weight="600" font-size="12" fill="' + (op ? '#fff' : '#0C2748') + '">' + fmt(cc) + ' t</text>';
+    s += '<text x="' + cx + '" y="387" text-anchor="middle" font-family="IBM Plex Sans,sans-serif" font-size="10.5" fill="' + (op ? 'rgba(255,255,255,.85)' : '#5E7186') + '">de ' + fmt(plano) + '</text>';
+  }
+  return s + '</svg>';
+}
+function painelVivo() {
+  if (!SIM) simIniciar();
+  const e = SIM.estado;
+  const botoes = e === 'finalizado' ? '<button type="button" id="simReiniciar">↺ Reiniciar simulação</button>' :
+    e === 'operando' ? '<button type="button" class="sit-par" id="simParar">⏸ Parar operação</button>' : '<button type="button" class="sit-op" id="simRetomar">▶ Retomar operação</button>';
+  const form = SIM_FORM && e === 'operando' ? '<label for="simMotivo" class="muted">Motivo da paralisação</label><select id="simMotivo"><option value="">— escolha —</option>' + MOTIVOS_PARADA.map(m => '<option>' + m + '</option>').join('') + '</select><button type="button" class="sit-par" id="simConfirma">Confirmar paralisação</button><button type="button" id="simCancela">Cancelar</button>' : '';
+  const hist = SIM.paradas.slice(-3).reverse().map(p => '<span>⏸ ' + p.ini + (p.fim ? ' → ' + p.fim : ' → em andamento') + ' · ' + esc(p.motivo) + '</span>').join('');
+  return '<section class="painel vivo"><div class="vivo-cab"><h2>Navio operando · ao vivo <small>' + esc(SIM.navio) + ' · ' + esc(SIM.carga) + ' · ' + esc(SIM.cliente) + '</small></h2><div class="ctrl">' + botoes + form + '</div></div>' +
+    '<div id="navioVivo">' + navioSVG() + '</div>' +
+    '<div class="vivo-rod"><span><b>Como ler:</b> porão em verde = guindaste trabalhando nele agora; a carga sobe até o plano do porão; a caçamba mostra o ciclo do guindaste.</span>' + hist + '<span class="muted">Simulação de demonstração: a produção avança sozinha a cada 3 s.</span></div></section>' +
+    '<div class="kpis" id="kpiVivo">' + kpisVivo() + '</div>';
+}
+function ligarVivo() {
+  clearInterval(SIM_TIMER); SIM_TIMER = setInterval(simTique, 3000);
+  clearInterval(window.__relVivo); window.__relVivo = setInterval(() => { const r = document.getElementById('relVivo'); if (r) r.textContent = new Date().toLocaleTimeString('pt-BR'); else clearInterval(window.__relVivo); }, 1000);
+  const redesenha = () => { const t = document.getElementById('tela'); if (t) { t.innerHTML = V.embarque(); ligarVivo(); } };
+  const b = id => document.getElementById(id);
+  if (b('simParar')) b('simParar').onclick = () => { SIM_FORM = true; redesenha(); };
+  if (b('simCancela')) b('simCancela').onclick = () => { SIM_FORM = false; redesenha(); };
+  if (b('simConfirma')) b('simConfirma').onclick = () => { const m = b('simMotivo').value; if (!m) { toast('Escolha o motivo da paralisação'); return; } SIM.estado = 'parado'; SIM.motivo = m; SIM_FORM = false; SIM.paradas.push({ ini: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), motivo: m }); toast('Paralisação registrada: ' + m); redesenha(); };
+  if (b('simRetomar')) b('simRetomar').onclick = () => { SIM.estado = 'operando'; const ul = SIM.paradas[SIM.paradas.length - 1]; if (ul && !ul.fim) ul.fim = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); SIM.motivo = ''; toast('Operação retomada'); redesenha(); };
+  if (b('simReiniciar')) b('simReiniciar').onclick = () => { simIniciar(); redesenha(); };
+}
 V.embarque = () => {
   const n = D.navEmb, tp = D.poroes.reduce((s, p) => s + p.plano, 0), tf = D.poroes.reduce((s, p) => s + p.feito, 0);
   const ritmo = D.prodTurno.slice(-D.turnosDia.length).reduce((s, t) => s + t.real, 0); const etc = (tp - tf) / Math.max(1, ritmo) * 24;
-  return cab('Navios · shipping planning', 'Embarque · ' + n.navio, 'Plano por porão, produção por turno contra o programado e previsão de término pelo ritmo real.') +
+  return cab('Navios · shipping planning', 'Embarque · ' + n.navio, 'Visão ao vivo do navio operando: porões enchendo até o plano, guindastes trabalhando, paralisações e término previsto pelo ritmo real. Abaixo, plano por porão e produção por turno.') + painelVivo() +
   `<div class="kpis">${kpi('Embarcado', fmt(tf), 't', fmt(tf / tp * 100) + '% do plano')}${kpi('Saldo', fmt(tp - tf), 't')}${kpi('Ritmo últimas 24 h', fmt(ritmo), 't/dia', ritmo >= n.prancha ? '▲ acima da prancha' : '▼ abaixo da prancha contratada', ritmo >= n.prancha ? 'up' : 'down')}${kpi('Término previsto', fmt(etc, 0), 'h', 'pelo ritmo real')}</div>
   <div class="grade"><section class="painel c6"><h2>Porões <small>plano × embarcado (t)</small></h2>${grafBarras({ rotulos: D.poroes.map(p => p.porao), series: [{ n: 'Plano', c: 's3', v: D.poroes.map(p => p.plano) }, { n: 'Embarcado', c: 's1', v: D.poroes.map(p => p.feito) }] })}<div class="legenda"><span><i style="background:var(--tx-3);opacity:.35"></i>Plano</span><span><i style="background:var(--agua)"></i>Embarcado</span></div></section>
   <section class="painel c6"><h2>Produção por turno <small>programado × realizado (t)</small></h2>${grafBarras({ rotulos: D.prodTurno.map(t => t.t.split(' ').pop()), series: [{ n: 'Programado', c: 's3', v: D.prodTurno.map(t => t.prog) }, { n: 'Realizado', c: 's2', v: D.prodTurno.map(t => t.real) }] })}<div class="legenda"><span><i style="background:var(--tx-3);opacity:.35"></i>Programado</span><span><i style="background:var(--boia)"></i>Realizado</span></div></section></div>
@@ -636,12 +830,13 @@ function render(){
   if (MAPA && m !== 'mapa') { MAPA.remove(); MAPA = null; clearInterval(window.__autoNavios); }
   montarNav(m); $('#tela').innerHTML = V[m](); ls.set('ultima', m);
   if (m === 'mapa') iniciarMapa();
+  if (m === 'embarque') ligarVivo(); else { clearInterval(SIM_TIMER); clearInterval(window.__relVivo); }
 }
 document.addEventListener('change', e => { if (e.target.id === 'fRec'){ ls.set('fRec', e.target.value); render(); } });
 document.addEventListener('click', e => {
   const tr = e.target.closest('tr.clic'); if (tr && location.hash === '#carretas'){ ls.set('selCar', +tr.dataset.i); render(); return; }
   const b = e.target.closest('[data-baia]'); if (b){ ls.set('selBaia', +b.dataset.baia); render(); return; }
-  if (e.target.id === 'cPadrao'){ CFG = Object.assign({}, PADRAO); ls.set('cfg', CFG); gerar(); render(); toast('Configuração padrão restaurada'); }
+  if (e.target.id === 'cPadrao'){ CFG = Object.assign({}, PADRAO); ls.set('cfg', CFG); gerar(); SIM = null; render(); toast('Configuração padrão restaurada'); }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Enter'){ const tr = e.target.closest && e.target.closest('tr.clic'); if (tr) tr.click(); } });
 document.addEventListener('submit', e => {
@@ -649,7 +844,7 @@ document.addEventListener('submit', e => {
   const cargas = [...document.querySelectorAll('input[name=carga]:checked')].map(i => i.value);
   const modal = [...document.querySelectorAll('input[name=modal]:checked')].map(i => i.value);
   CFG = { nome: $('#cNome').value.trim() || PADRAO.nome, cidade: $('#cCidade').value.trim() || PADRAO.cidade, bercos: Math.max(1, Math.min(6, +$('#cBercos').value || 4)), turnos: $('#cTurnos').value, metaDia: Math.max(1000, +$('#cMeta').value || 18000), cargas: cargas.length ? cargas : ['gusa'], modal: modal.length ? modal : ['rodo'] };
-  ls.set('cfg', CFG); gerar(); render(); toast('Demo ajustado para ' + CFG.nome);
+  ls.set('cfg', CFG); gerar(); SIM = null; render(); toast('Demo ajustado para ' + CFG.nome);
 });
 window.addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
 gerar();
