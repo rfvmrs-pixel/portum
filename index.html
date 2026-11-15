@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Portum - Sistema Integrado de Gestão portuária. Demonstração com dados fictícios.">
+<meta name="description" content="Portum - Sistema Integrado de Gestão portuária. Demonstração com dados fictícios e mapa de navios com AIS ao vivo.">
 <link rel="icon" type="image/svg+xml" href="marca/portum-simbolo.svg">
 <style>body{margin:0}</style>
 <title>Portum</title>
@@ -131,7 +131,25 @@ svg.graf .a1{fill:var(--agua);opacity:.14}
 .checks{display:flex;flex-wrap:wrap;gap:6px}
 .checks label{flex-direction:row;align-items:center;gap:6px;border:1px solid var(--linha);border-radius:8px;padding:5px 10px;color:var(--tx);background:var(--sup)}
 .toast{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--mar);color:#fff;padding:10px 14px;border-radius:10px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
-@media (max-width:1000px){.c4,.c5,.c6,.c7,.c8{grid-column:span 12}}
+.mapa-wrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px}
+#mapaNavios{height:560px;border-radius:12px;border:1px solid var(--linha);background:var(--sup-2);z-index:0}
+.busca{position:relative;flex:1 1 320px;max-width:520px}
+.busca input{width:100%;padding:9px 12px 9px 36px;font-size:14px}
+.busca svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--tx-3)}
+.sugestoes{position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--sup);border:1px solid var(--linha);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.15);z-index:1000;max-height:300px;overflow-y:auto}
+.sugestoes button{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;border:0;border-radius:0;padding:8px 12px;background:transparent}
+.sugestoes button:hover,.sugestoes button:focus-visible{background:var(--sup-2)}
+.sugestoes small{color:var(--tx-3)}
+.lista-navios{display:flex;flex-direction:column;gap:0;max-height:470px;overflow-y:auto;margin:0;padding:0;list-style:none}
+.lista-navios li{padding:8px 4px;border-bottom:1px solid var(--linha);cursor:pointer;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.lista-navios li:hover{background:var(--sup-2)}
+.lista-navios .q{font-size:11.5px;color:var(--tx-3)}
+.mt-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--agua);text-decoration:none;font-weight:600}
+.mt-link:hover{text-decoration:underline}
+.leaflet-popup-content{font-family:var(--f-tx);font-size:12.5px;line-height:1.45}
+.leaflet-popup-content b{font-size:13.5px}
+.nv-ic{background:transparent;border:0}
+@media (max-width:1000px){.mapa-wrap{grid-template-columns:minmax(0,1fr)} #mapaNavios{height:420px} .c4,.c5,.c6,.c7,.c8{grid-column:span 12}}
 @media (max-width:820px){
   .app{grid-template-columns:minmax(0,1fr)}
   aside{position:sticky;height:auto;flex-direction:column;gap:10px;padding-block:10px;padding-right:max(14px,env(safe-area-inset-right,0px));z-index:5}
@@ -150,7 +168,7 @@ svg.graf .a1{fill:var(--agua);opacity:.14}
     <div class="marca" id="marca"></div>
     <div class="porto"><span>Ambiente de demonstração</span><b id="nomePorto">Terminal Baía Serena</b><span id="descPorto">Porto fictício · 4 berços</span></div>
     <nav id="nav" aria-label="Módulos"></nav>
-    <div class="rodape-lat">Portum · demo v2 · dados fictícios</div>
+    <div class="rodape-lat">Portum · demo v3 · mapa com AIS ao vivo</div>
   </aside>
   <main><div class="wrap" id="tela"></div></main>
 </div>
@@ -283,10 +301,12 @@ const IC = {
   equipe: '<path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-1a6 6 0 0 1 12 0v1M17 11a3 3 0 1 0 0-6M22 21v-1a5 5 0 0 0-4-4.9"/>',
   equip: '<path d="M4 18V8l5-3v13M9 9h7l3 4v5H4M7 18a2 2 0 1 0 0 .1M16 18a2 2 0 1 0 0 .1"/>',
   sms: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z M9 12l2 2 4-4"/>',
+  mapa: '<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14"/>',
   config: '<path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12l2-1-1-3-2 .3-1.4-1.4L17 5l-3-1-1 2h-2L10 4 7 5l.4 2-1.4 1.4L4 8 3 11l2 1v0l-2 1 1 3 2-.3 1.4 1.4L7 19l3 1 1-2h2l1 2 3-1-.4-2 1.4-1.4 2 .4 1-3z"/>'
 };
 const MODULOS = [
   { id: 'inicio', g: 'Visão', t: 'Painel executivo', ic: 'inicio' },
+  { id: 'mapa', g: 'Navios', t: 'Mapa de navios', ic: 'mapa' },
   { id: 'bercos', g: 'Navios', t: 'Berços e navios', ic: 'bercos' },
   { id: 'embarque', g: 'Navios', t: 'Embarque', ic: 'embarque' },
   { id: 'recebimento', g: 'Cargas', t: 'Recebimento', ic: 'receb' },
@@ -333,6 +353,127 @@ V.inicio = () => {
   <div class="grade"><section class="painel c8"><h2>Movimentação por hora <small>t/h hoje · linha tracejada = meta</small></h2>${grafBarras({ rotulos: D.horaDescarga.map((_, i) => String(i).padStart(2, '0')), series: [{ n: 'Movimentado', c: 's1', v: D.horaDescarga }], linha: { v: D.horaDescarga.map(() => CFG.metaDia / 24) } })}</section>
   <section class="painel c4"><h2>Line-up <small>próximos navios</small></h2><ul class="lista">${D.lineup.slice(0, 6).map(n => `<li><div><b>${n.navio}</b><div class="q">${n.op} · ${n.carga}</div></div>${stNavio(n.status)}</li>`).join('')}</ul></section></div>`;
 };
+// ---------- Mapa de navios (AIS ao vivo) ----------
+const API = 'https://portumtech.com.br/api';
+const PORTOS = [
+ ['Rio de Janeiro','Brasil',-22.885,-43.185],['Itaguaí (Sepetiba)','Brasil',-22.93,-43.84],['Santos','Brasil',-23.96,-46.31],['Paranaguá','Brasil',-25.50,-48.52],
+ ['Itajaí','Brasil',-26.90,-48.66],['Navegantes','Brasil',-26.89,-48.65],['São Francisco do Sul','Brasil',-26.24,-48.64],['Rio Grande','Brasil',-32.07,-52.09],
+ ['Vitória / Tubarão','Brasil',-20.29,-40.25],['Porto do Açu','Brasil',-21.83,-41.00],['Suape','Brasil',-8.39,-34.96],['Pecém','Brasil',-3.53,-38.80],
+ ['Itaqui (São Luís)','Brasil',-2.57,-44.37],['Salvador','Brasil',-12.96,-38.51],['Aratu','Brasil',-12.79,-38.50],['Vila do Conde (Barcarena)','Brasil',-1.54,-48.75],
+ ['Manaus','Brasil',-3.14,-60.02],['Imbituba','Brasil',-28.23,-48.65],['Angra dos Reis','Brasil',-23.01,-44.32],['São Sebastião','Brasil',-23.81,-45.40],
+ ['Fortaleza (Mucuripe)','Brasil',-3.71,-38.48],['Natal','Brasil',-5.77,-35.20],['Maceió','Brasil',-9.68,-35.73],['Recife','Brasil',-8.06,-34.87],['Cabedelo','Brasil',-6.97,-34.84],
+ ['Buenos Aires','Argentina',-34.59,-58.37],['Montevidéu','Uruguai',-34.90,-56.21],['San Antonio','Chile',-33.59,-71.62],['Valparaíso','Chile',-33.03,-71.63],
+ ['Callao','Peru',-12.05,-77.15],['Cartagena','Colômbia',10.40,-75.53],['Balboa','Panamá',8.95,-79.57],['Colón','Panamá',9.36,-79.90],['Manzanillo','México',19.06,-104.30],
+ ['Veracruz','México',19.20,-96.13],['Houston','EUA',29.73,-95.02],['Nova Orleans','EUA',29.93,-90.06],['Savannah','EUA',32.08,-81.09],['Nova York / Nova Jersey','EUA',40.67,-74.08],
+ ['Los Angeles','EUA',33.73,-118.26],['Long Beach','EUA',33.75,-118.21],['Vancouver','Canadá',49.29,-123.10],['Roterdã','Holanda',51.95,4.14],['Antuérpia','Bélgica',51.27,4.33],
+ ['Hamburgo','Alemanha',53.54,9.93],['Le Havre','França',49.48,0.13],['Marselha','França',43.33,5.34],['Felixstowe','Reino Unido',51.95,1.32],['Valência','Espanha',39.44,-0.32],
+ ['Algeciras','Espanha',36.13,-5.43],['Barcelona','Espanha',41.35,2.16],['Gênova','Itália',44.40,8.91],['Pireu','Grécia',37.94,23.62],['Gdansk','Polônia',54.40,18.67],
+ ['Tânger Med','Marrocos',35.89,-5.50],['Lagos (Apapa)','Nigéria',6.44,3.37],['Durban','África do Sul',-29.87,31.03],['Richards Bay','África do Sul',-28.80,32.08],
+ ['Saldanha','África do Sul',-33.02,17.95],['Mombaça','Quênia',-4.05,39.66],['Jebel Ali','Emirados Árabes',25.01,55.06],['Mumbai (JNPT)','Índia',18.95,72.95],
+ ['Colombo','Sri Lanka',6.95,79.84],['Singapura','Singapura',1.26,103.82],['Port Klang','Malásia',3.00,101.39],['Tanjung Pelepas','Malásia',1.36,103.55],
+ ['Hong Kong','China',22.33,114.12],['Shenzhen','China',22.48,113.88],['Cantão (Guangzhou)','China',22.80,113.60],['Xangai','China',30.63,122.07],['Ningbo-Zhoushan','China',29.93,121.88],
+ ['Qingdao','China',36.07,120.32],['Tianjin','China',38.98,117.78],['Busan','Coreia do Sul',35.10,129.04],['Kaohsiung','Taiwan',22.61,120.28],['Tóquio','Japão',35.62,139.79],
+ ['Yokohama','Japão',35.45,139.66],['Port Hedland','Austrália',-20.31,118.58],['Newcastle','Austrália',-32.92,151.79],['Melbourne','Austrália',-37.84,144.92],['Sydney (Botany)','Austrália',-33.97,151.21]
+];
+const semAcento = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const tipoNavio = t => !t ? '' : t >= 70 && t < 80 ? 'Carga' : t >= 80 && t < 90 ? 'Tanque' : t >= 60 && t < 70 ? 'Passageiros' : t === 52 ? 'Rebocador' : t >= 30 && t < 40 ? 'Pesca/serviço' : t === 50 ? 'Prático' : 'Outro';
+const linkMTporto = (lat, lon) => 'https://www.marinetraffic.com/en/ais/home/centerx:' + lon.toFixed(3) + '/centery:' + lat.toFixed(3) + '/zoom:12';
+const linkMTnavio = mmsi => 'https://www.marinetraffic.com/en/ais/details/ships/mmsi:' + mmsi;
+let MAPA = null, CAMADA = null, PORTO = null, ULTIMOS = [];
+V.mapa = () => {
+  PORTO = PORTO || ls.get('porto', null) || { nome: 'Rio de Janeiro', pais: 'Brasil', lat: -22.885, lon: -43.185 };
+  return cab('Navios · AIS em tempo real', 'Mapa de navios', 'Busque qualquer porto do mundo e veja os navios em navegação, fundeados e atracados na área, com posição, velocidade e rumo. Cada navio abre direto no MarineTraffic.',
+    '<button class="prim" id="btAtualizarNavios" type="button">Atualizar navios</button>') +
+  '<section class="painel"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between">' +
+  '<div class="busca"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/></svg>' +
+  '<input type="text" id="buscaPorto" placeholder="Buscar porto ou cidade (ex.: Santos, Roterdã, Singapura)" autocomplete="off" aria-label="Buscar porto"><div class="sugestoes" id="sugPorto" hidden></div></div>' +
+  '<a class="mt-link" id="mtPorto" target="_blank" rel="noopener" href="' + linkMTporto(PORTO.lat, PORTO.lon) + '">Abrir este porto no MarineTraffic ↗</a></div>' +
+  '<div class="kpis" id="kpiMapa">' + kpi('Porto', esc(PORTO.nome), '', esc(PORTO.pais || '')) + kpi('Navios na área', '…') + kpi('Em navegação', '…') + kpi('Parados / atracados', '…') + '</div>' +
+  '<div class="mapa-wrap"><div id="mapaNavios" role="region" aria-label="Mapa de navios"></div><div class="painel" style="padding:12px"><h2>Navios na área <small id="mapaHora"></small></h2><ul class="lista-navios" id="listaNavios"><li class="muted">Carregando o mapa…</li></ul></div></div>' +
+  '<p class="muted" style="margin:0;font-size:12px">Fonte: AIS em tempo real (AISStream.io), escuta de ~20 s por busca. A cobertura é menor que a do MarineTraffic; para a visão completa use os botões "MarineTraffic ↗". Mapa © OpenStreetMap.</p></section>';
+};
+function carregarLeaflet(cb) {
+  if (window.L) return cb();
+  if (!document.getElementById('leafletCss')) { const l = document.createElement('link'); l.id = 'leafletCss'; l.rel = 'stylesheet'; l.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'; document.head.appendChild(l); }
+  const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'; s.onload = cb;
+  s.onerror = () => { const el = $('#listaNavios'); if (el) el.innerHTML = '<li class="muted">Não foi possível carregar o mapa (biblioteca bloqueada pela rede).</li>'; };
+  document.head.appendChild(s);
+}
+function iconeNavio(n) {
+  const mov = (n.sog || 0) > 1; const cor = mov ? '#15A3A8' : '#E09422';
+  const ang = typeof n.rumo === 'number' ? n.rumo : (typeof n.cog === 'number' ? n.cog : 0);
+  const forma = mov ? '<path d="M12 2l6 18-6-4-6 4z" fill="' + cor + '" stroke="#fff" stroke-width="1.5"/>' : '<circle cx="12" cy="12" r="6" fill="' + cor + '" stroke="#fff" stroke-width="2"/>';
+  return L.divIcon({ className: 'nv-ic', iconSize: [22, 22], iconAnchor: [11, 11], html: '<svg viewBox="0 0 24 24" width="22" height="22" style="transform:rotate(' + (mov ? ang : 0) + 'deg)">' + forma + '</svg>' });
+}
+function popupNavio(n) {
+  const linhas = [
+    n.status ? 'Situação: ' + esc(n.status) : ((n.sog || 0) > 1 ? 'Em movimento' : 'Parado'),
+    typeof n.sog === 'number' ? 'Velocidade: ' + fmt(n.sog, 1) + ' nós' : '',
+    typeof n.cog === 'number' ? 'Rumo: ' + fmt(n.cog) + '°' : '',
+    n.destino ? 'Destino: ' + esc(n.destino) : '',
+    n.tipo ? 'Tipo: ' + tipoNavio(n.tipo) : '',
+    n.comp ? 'Comprimento: ' + n.comp + ' m' : '',
+    n.calado ? 'Calado: ' + fmt(n.calado, 1) + ' m' : '',
+    'MMSI ' + n.mmsi + (n.imo ? ' · IMO ' + n.imo : ''),
+    'Sinal: ' + new Date(n.visto).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  ].filter(Boolean).join('<br>');
+  return '<b>' + esc(n.nome || 'Sem nome (MMSI ' + n.mmsi + ')') + '</b><br>' + linhas + '<br><a class="mt-link" href="' + linkMTnavio(n.mmsi) + '" target="_blank" rel="noopener">Ver no MarineTraffic ↗</a>';
+}
+function desenharNavios(lista, info) {
+  ULTIMOS = lista; CAMADA.clearLayers();
+  const ord = [...lista].sort((a, b) => (b.sog || 0) - (a.sog || 0));
+  ord.forEach((n, i) => { n._m = L.marker([n.lat, n.lon], { icon: iconeNavio(n), title: n.nome || String(n.mmsi) }).bindPopup(popupNavio(n)).addTo(CAMADA); });
+  const mov = lista.filter(n => (n.sog || 0) > 1).length;
+  $('#kpiMapa').innerHTML = kpi('Porto', esc(PORTO.nome), '', esc(PORTO.pais || '')) + kpi('Navios na área', lista.length) + kpi('Em navegação', mov, '', '> 1 nó') + kpi('Parados / atracados', lista.length - mov);
+  $('#mapaHora').textContent = info || '';
+  $('#listaNavios').innerHTML = ord.length ? ord.map((n, i) => '<li data-nv="' + i + '" tabindex="0"><div><b>' + esc(n.nome || 'MMSI ' + n.mmsi) + '</b><div class="q">' + ((n.sog || 0) > 1 ? fmt(n.sog, 1) + ' nós' : 'parado') + (n.destino ? ' · → ' + esc(n.destino) : '') + '</div></div>' + chip((n.sog || 0) > 1 ? 'Navegando' : (n.status === 'Atracado' ? 'Atracado' : 'Parado'), (n.sog || 0) > 1 ? 'in' : 'at') + '</li>').join('') : '<li class="muted">Nenhum navio recebido nesta escuta. Tente "Atualizar navios" ou abra no MarineTraffic.</li>';
+  $('#listaNavios').querySelectorAll('li[data-nv]').forEach(li => li.addEventListener('click', () => { const n = ord[+li.dataset.nv]; MAPA.setView([n.lat, n.lon], Math.max(MAPA.getZoom(), 13)); n._m.openPopup(); }));
+}
+function buscarNavios(forcar) {
+  if (!MAPA) return;
+  const b = MAPA.getBounds(); const c0 = MAPA.getCenter();
+  const meia = 0.6; const s = Math.max(b.getSouth(), c0.lat - meia), nn = Math.min(b.getNorth(), c0.lat + meia), o = Math.max(b.getWest(), c0.lng - meia), l = Math.min(b.getEast(), c0.lng + meia);
+  $('#mapaHora').textContent = 'escutando o AIS (~20 s)…';
+  const bt = $('#btAtualizarNavios'); if (bt) { bt.disabled = true; bt.textContent = 'Buscando…'; }
+  fetch(API + '/navios?bbox=' + [s, o, nn, l].map(v => v.toFixed(3)).join(','))
+    .then(r => r.json())
+    .then(j => { if (!MAPA) return; desenharNavios(j.navios || [], 'atualizado ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + (j.aviso ? ' · ' + j.aviso : '')); })
+    .catch(() => { $('#mapaHora').textContent = 'sem conexão com o serviço de navios'; })
+    .finally(() => { const bt2 = $('#btAtualizarNavios'); if (bt2) { bt2.disabled = false; bt2.textContent = 'Atualizar navios'; } });
+}
+function irParaPorto(p) {
+  PORTO = p; ls.set('porto', p);
+  $('#mtPorto').href = linkMTporto(p.lat, p.lon);
+  MAPA.setView([p.lat, p.lon], 11);
+  buscarNavios(true);
+}
+function iniciarMapa() {
+  carregarLeaflet(() => {
+    const el = document.getElementById('mapaNavios'); if (!el) return;
+    if (MAPA) { MAPA.remove(); MAPA = null; }
+    MAPA = L.map(el, { zoomControl: true }).setView([PORTO.lat, PORTO.lon], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(MAPA);
+    CAMADA = L.layerGroup().addTo(MAPA);
+    buscarNavios();
+    const inp = $('#buscaPorto'), sug = $('#sugPorto'); let tmr = null, achados = [];
+    const mostrar = () => { sug.hidden = !achados.length; sug.innerHTML = achados.map((p, i) => '<button type="button" data-p="' + i + '"><span>' + esc(p.nome) + '</span><small>' + esc(p.pais || '') + '</small></button>').join(''); };
+    inp.addEventListener('input', () => {
+      const q = semAcento(inp.value.trim()); clearTimeout(tmr);
+      if (q.length < 2) { achados = []; return mostrar(); }
+      achados = PORTOS.filter(p => semAcento(p[0] + ' ' + p[1]).includes(q)).slice(0, 8).map(p => ({ nome: p[0], pais: p[1], lat: p[2], lon: p[3] }));
+      mostrar();
+      if (q.length >= 3) tmr = setTimeout(() => {
+        fetch('https://nominatim.openstreetmap.org/search?format=json&limit=5&accept-language=pt-BR&q=' + encodeURIComponent(inp.value.trim()))
+          .then(r => r.json()).then(js => { const extra = js.map(x => ({ nome: x.display_name.split(',').slice(0, 2).join(','), pais: (x.display_name.split(',').pop() || '').trim(), lat: +x.lat, lon: +x.lon })); achados = achados.concat(extra.filter(e => !achados.some(a => Math.abs(a.lat - e.lat) < .05 && Math.abs(a.lon - e.lon) < .05))).slice(0, 10); mostrar(); }).catch(() => {});
+      }, 500);
+    });
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter' && achados[0]) { e.preventDefault(); sug.hidden = true; inp.value = achados[0].nome; irParaPorto(achados[0]); } if (e.key === 'Escape') sug.hidden = true; });
+    sug.addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (!b) return; const p = achados[+b.dataset.p]; sug.hidden = true; inp.value = p.nome; irParaPorto(p); });
+    document.addEventListener('click', e => { if (!e.target.closest('.busca')) sug.hidden = true; });
+    $('#btAtualizarNavios').addEventListener('click', () => buscarNavios(true));
+    MAPA.on('moveend', () => { const c0 = MAPA.getCenter(); $('#mtPorto').href = linkMTporto(c0.lat, c0.lng); });
+  });
+}
 V.bercos = () => {
   const W = 640, H = 230, comp = (W - 40) / CFG.bercos;
   let mapa = `<svg class="graf" viewBox="0 0 ${W} ${H}" role="img" aria-label="Mapa do cais"><rect x="0" y="0" width="${W}" height="150" fill="var(--info-bg)"/><path d="M0 40 q20 -6 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0" stroke="var(--agua-2)" stroke-opacity=".35" fill="none"/><rect x="0" y="150" width="${W}" height="80" fill="var(--sup-2)"/><line x1="0" x2="${W}" y1="150" y2="150" stroke="var(--tx-3)" stroke-width="3"/>`;
@@ -445,7 +586,9 @@ V.porto = () => cab('Implantação', 'Adaptar ao seu porto', 'Cada porto tem seu
 // ---------- roteamento e eventos ----------
 function render(){
   const id = (location.hash || '#inicio').slice(1); const m = MODULOS.find(x => x.id === id) ? id : 'inicio';
+  if (MAPA && m !== 'mapa') { MAPA.remove(); MAPA = null; }
   montarNav(m); $('#tela').innerHTML = V[m](); ls.set('ultima', m);
+  if (m === 'mapa') iniciarMapa();
 }
 document.addEventListener('change', e => { if (e.target.id === 'fRec'){ ls.set('fRec', e.target.value); render(); } });
 document.addEventListener('click', e => {
