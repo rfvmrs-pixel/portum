@@ -3,21 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Portum - gestão portuária integrada. Demonstração com dados fictícios.">
+<meta name="description" content="Portum - Sistema Integrado de Gestão portuária. Demonstração com dados fictícios.">
 <link rel="icon" type="image/svg+xml" href="marca/portum-simbolo.svg">
 <style>body{margin:0}</style>
 <title>Portum</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: barra lateral de módulos (vira faixa rolável no celular) + área de trabalho com resumo no topo e detalhe abaixo */
 :root{
-  --mar:#0B2540; --agua:#1F7A7A; --agua-2:#2BA3A3; --boia:#E09422; --boia-forte:#B8730C;
+  --mar:#0C2748; --agua:#15808F; --agua-2:#2EC7C0; --grad:linear-gradient(135deg,#1C5F92 0%,#1FA0AC 55%,#4FD9CB 100%); --faixa:linear-gradient(120deg,#0C2748 0%,#0F325C 60%,#134575 100%); --boia:#E09422; --boia-forte:#B8730C;
   --bg:#F3F6F8; --sup:#FFFFFF; --sup-2:#EAF0F3; --linha:#D5DEE4; --tx:#0F2233; --tx-2:#4A6072; --tx-3:#7890A0;
   --ok:#1E8A55; --ok-bg:#E2F4EA; --at:#B7791F; --at-bg:#FBF0DC; --cr:#C2413A; --cr-bg:#FBE5E3; --info-bg:#E1F1F1;
-  --lateral:#0B2540; --lateral-tx:#C9D7E2; --lateral-ativo:#163A5C;
-  --f-disp:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --lateral:#0C2748; --lateral-tx:#C9D7E2; --lateral-ativo:#17406E;
+  --f-disp:'Montserrat','Segoe UI',Arial,sans-serif;
   --f-tx:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;
   --f-num:'IBM Plex Mono',ui-monospace,Consolas,monospace;
 }
@@ -36,18 +36,18 @@ html,body{height:100%}
 body{background:var(--bg);color:var(--tx);font-family:var(--f-tx);font-size:14px;line-height:1.5}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--lateral)}
 .app{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100%}
-aside{background:var(--lateral);color:var(--lateral-tx);padding-block:18px;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:14px;position:sticky;top:env(safe-area-inset-top,0px);height:100vh;overflow-y:auto;display:flex;flex-direction:column;gap:18px}
+aside{background:linear-gradient(180deg,#0C2748 0%,#0A1E3A 100%);color:var(--lateral-tx);padding-block:18px;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:14px;position:sticky;top:env(safe-area-inset-top,0px);height:100vh;overflow-y:auto;display:flex;flex-direction:column;gap:18px}
 .marca{display:flex;align-items:center;gap:10px;padding:2px 6px}
-.marca svg{width:38px;height:38px;flex:none}
-.marca b{font-family:var(--f-disp);font-size:26px;letter-spacing:2.5px;color:#fff;line-height:1}
-.marca small{display:block;font-size:9.5px;letter-spacing:1.6px;color:#7FD6D6;text-transform:uppercase}
+.marca svg{width:48px;height:48px;flex:none}
+.marca b{font-family:var(--f-disp);font-size:22px;font-weight:800;letter-spacing:.6px;color:#fff;line-height:1;display:block}
+.marca small{display:block;font-family:var(--f-disp);font-size:7.6px;font-weight:700;letter-spacing:.7px;color:#fff;text-transform:uppercase;margin-top:4px;white-space:nowrap}
 .porto{background:rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;font-size:12px}
 .porto b{display:block;color:#fff;font-weight:600;font-size:13px}
 nav{display:flex;flex-direction:column;gap:2px}
 nav .grupo{font-size:10.5px;letter-spacing:1.4px;text-transform:uppercase;color:#6E8BA2;padding:10px 10px 4px}
 nav a{display:flex;align-items:center;gap:10px;color:var(--lateral-tx);text-decoration:none;padding:8px 10px;border-radius:8px;font-size:13.5px}
 nav a:hover{background:rgba(255,255,255,.06);color:#fff}
-nav a[aria-current="page"]{background:var(--lateral-ativo);color:#fff;box-shadow:inset 3px 0 0 #F2A93B}
+nav a[aria-current="page"]{background:var(--lateral-ativo);color:#fff;box-shadow:inset 3px 0 0 #4FD9CB}
 nav a svg{width:17px;height:17px;flex:none;opacity:.85}
 nav a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--boia);outline-offset:2px}
 .rodape-lat{margin-top:auto;font-size:11px;color:#6E8BA2;padding:0 8px}
@@ -55,30 +55,34 @@ main{min-width:0;padding-block:22px 40px;padding-left:max(16px,env(safe-area-ins
 .wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
 .aviso{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;background:var(--info-bg);border:1px solid var(--linha);border-radius:10px;padding:8px 14px;font-size:12.5px;color:var(--tx-2)}
 .aviso b{color:var(--tx)}
+.faixa{background:var(--faixa);border-radius:16px;padding:22px 24px;color:#fff;display:flex;flex-wrap:wrap;align-items:center;gap:14px 22px}
+.faixa svg{width:86px;height:86px;flex:none}
+.faixa .nm{font-family:var(--f-disp);font-weight:800;font-size:42px;line-height:1;letter-spacing:.5px}
+.faixa .tg{font-family:var(--f-disp);font-weight:700;font-size:12.5px;letter-spacing:1.1px;margin-top:7px;text-transform:uppercase}
+.faixa p{margin:0;flex-basis:100%;font-size:14.5px;color:#C4D3E2;line-height:1.45}
+.faixa p b{color:#fff;font-weight:600}
 .cab{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
-.cab h1{font-family:var(--f-disp);font-weight:700;font-size:34px;letter-spacing:.5px;margin:0;line-height:1.05;text-wrap:balance}
+.cab h1{font-family:var(--f-disp);font-weight:800;font-size:27px;letter-spacing:-.2px;margin:0;line-height:1.05;text-wrap:balance}
 .cab p{margin:4px 0 0;color:var(--tx-2);max-width:68ch}
 .eyebrow{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--agua);font-weight:600}
 .ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 select,input[type=text],input[type=number]{font:inherit;color:var(--tx);background:var(--sup);border:1px solid var(--linha);border-radius:8px;padding:6px 10px}
 button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--linha);background:var(--sup);color:var(--tx);padding:6px 12px}
-button.prim{background:var(--mar);border-color:var(--mar);color:#fff}
-:root[data-theme="dark"] button.prim{background:var(--agua);border-color:var(--agua);color:#06151A}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) button.prim{background:var(--agua);border-color:var(--agua);color:#06151A}}
+button.prim{background:var(--grad);border-color:transparent;color:#fff;font-weight:600}
 .seg{display:inline-flex;border:1px solid var(--linha);border-radius:8px;overflow:hidden}
 .seg button{border:0;border-radius:0;padding:6px 12px}
 .seg button[aria-pressed="true"]{background:var(--mar);color:#fff}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
 .kpi{background:var(--sup);border:1px solid var(--linha);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:2px;min-width:0}
 .kpi span{font-size:12px;color:var(--tx-2)}
-.kpi b{font-family:var(--f-disp);font-size:30px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi b{font-family:var(--f-disp);font-size:25px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
 .kpi b small{font-family:var(--f-tx);font-size:13px;font-weight:500;color:var(--tx-2);margin-left:3px}
 .kpi em{font-style:normal;font-size:12px}
 .up{color:var(--ok)} .down{color:var(--cr)} .neu{color:var(--tx-3)}
 .grade{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px}
 .c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
 .painel{background:var(--sup);border:1px solid var(--linha);border-radius:12px;padding:16px;min-width:0;display:flex;flex-direction:column;gap:12px}
-.painel h2{font-family:var(--f-disp);font-size:19px;font-weight:600;margin:0;letter-spacing:.3px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.painel h2{font-family:var(--f-disp);font-size:15.5px;font-weight:700;margin:0;letter-spacing:0;display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
 .painel h2 small{font-family:var(--f-tx);font-size:12px;font-weight:400;color:var(--tx-3);letter-spacing:0}
 .tab{overflow-x:auto;border:1px solid var(--linha);border-radius:10px}
 table{border-collapse:collapse;width:100%;font-size:13px}
@@ -134,7 +138,7 @@ svg.graf .a1{fill:var(--agua);opacity:.14}
   .porto,.rodape-lat,nav .grupo{display:none}
   nav{flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:4px}
   nav a{white-space:nowrap;padding:6px 10px}
-  .cab h1{font-size:28px}
+  .cab h1{font-size:22px} .faixa .nm{font-size:30px} .faixa svg{width:64px;height:64px}
 }
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -143,13 +147,10 @@ svg.graf .a1{fill:var(--agua);opacity:.14}
 <body>
 <div class="app">
   <aside>
-    <div class="marca">
-      <svg viewBox="0 0 64 64" aria-hidden="true"><defs><clipPath id="lg"><rect width="64" height="64" rx="15"/></clipPath></defs><g clip-path="url(#lg)"><rect width="64" height="64" fill="#123456"/><rect x="17" y="11" width="7.5" height="33" rx="2" fill="#fff"/><path d="M23 14.75H33.5A11.25 11.25 0 0 1 33.5 37.25H23" fill="none" stroke="#fff" stroke-width="7.5"/><circle cx="33.5" cy="26" r="3.6" fill="#F2A93B"/><path d="M-2 50q5.5-4.5 11 0t11 0 11 0 11 0 11 0 11 0" fill="none" stroke="#3CC0C0" stroke-width="3.2" stroke-linecap="round"/><path d="M-7.5 57q5.5-4.5 11 0t11 0 11 0 11 0 11 0 11 0 11 0" fill="none" stroke="#3CC0C0" stroke-opacity=".55" stroke-width="3.2" stroke-linecap="round"/></g></svg>
-      <div><b>PORTUM</b><small>Gestão portuária integrada</small></div>
-    </div>
+    <div class="marca" id="marca"></div>
     <div class="porto"><span>Ambiente de demonstração</span><b id="nomePorto">Terminal Baía Serena</b><span id="descPorto">Porto fictício · 4 berços</span></div>
     <nav id="nav" aria-label="Módulos"></nav>
-    <div class="rodape-lat">Portum · demo v1 · dados fictícios</div>
+    <div class="rodape-lat">Portum · demo v2 · dados fictícios</div>
   </aside>
   <main><div class="wrap" id="tela"></div></main>
 </div>
@@ -165,6 +166,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 function rng(seed){ let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
 const ls = { get(k, d){ try { const v = localStorage.getItem('portum.' + k); return v ? JSON.parse(v) : d; } catch(e){ return d; } }, set(k, v){ try { localStorage.setItem('portum.' + k, JSON.stringify(v)); } catch(e){} } };
 function toast(t){ const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 2600); }
+const logo = id => `<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2A7DB8"/><stop offset=".55" stop-color="#22A9B0"/><stop offset="1" stop-color="#5FE6D4"/></linearGradient></defs><path fill="url(#${id})" fill-rule="evenodd" d="M8 16H30a13 13 0 0 1 0 26H20V56H8ZM20 26V32H29a3 3 0 0 0 0-6Z"/><path fill="url(#${id})" opacity=".85" d="M24 47C35 47 39 39 56 39V48C44 48 40 57 24 57Z"/><g fill="none" stroke="#8DEFE2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16V9L50 5M14 9L26 16M50 5V13"/></g><rect x="44.5" y="13" width="11" height="7" rx="1" fill="#8DEFE2"/></svg>`;
 const chip = (txt, cls) => `<span class="chip ${cls}">${esc(txt)}</span>`;
 const barra = (pct, cls = '') => `<div class="barra" title="${fmt(pct)}%"><i class="${cls}" style="width:${Math.max(0, Math.min(100, pct))}%"></i></div>`;
 const kpi = (rot, val, un, delta, dcls) => `<div class="kpi"><span>${rot}</span><b>${val}${un ? `<small>${un}</small>` : ''}</b>${delta ? `<em class="${dcls || 'neu'}">${delta}</em>` : ''}</div>`;
@@ -301,10 +303,12 @@ function montarNav(atual){
   let h = '', g = '';
   MODULOS.forEach(m => { if (m.g !== g){ g = m.g; h += `<div class="grupo">${g}</div>`; } h += `<a href="#${m.id}" ${m.id === atual ? 'aria-current="page"' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${IC[m.ic]}</svg>${m.t}</a>`; });
   $('#nav').innerHTML = h;
+  $('#marca').innerHTML = logo('lgLat') + '<div><b>PORTUM</b><small>Sistema Integrado de Gestão</small></div>';
   $('#nomePorto').textContent = CFG.nome;
   $('#descPorto').textContent = `${CFG.cidade} · ${CFG.bercos} berço${CFG.bercos > 1 ? 's' : ''} · turnos ${CFG.turnos}`;
 }
 const cab = (eb, t, p, ctrl = '') => `<div class="aviso"><span><b>Demonstração Portum.</b> Porto, navios, clientes e números são fictícios e gerados para mostrar o sistema.</span><span>Atualizado 14/11/2026 15:40</span></div><div class="cab"><div><div class="eyebrow">${eb}</div><h1>${t}</h1><p>${p}</p></div><div class="ctrl">${ctrl}</div></div>`;
+const faixa = () => `<section class="faixa">${logo('lgFaixa')}<div><div class="nm">PORTUM</div><div class="tg">Sistema Integrado de Gestão</div></div><p><b>Ambiente de Demonstração - ${esc(CFG.nome)}</b> - ${esc(CFG.cidade)} · ${CFG.bercos} berço${CFG.bercos > 1 ? 's' : ''} · turnos ${CFG.turnos}</p></section>`;
 const stNavio = s => chip(s, { Operando: 'ok', Atracando: 'in', Fundeado: 'at', Previsto: 'ne' }[s]);
 
 const V = {};
@@ -323,7 +327,7 @@ V.inicio = () => {
     ['equipe', 'Gestão de equipe', `${D.equipe.reduce((s, e) => s + e.presentes, 0)} pessoas no turno`, sinal(aloc, 85, 70), 'Alocação ' + fmt(aloc) + '%'],
     ['sms', 'Segurança (SMS)', `${D.sms.diasSemAcidente} dias sem acidente com afastamento`, D.sms.aso > 10 ? 'at' : 'ok', D.sms.aso + ' ASO vencendo']
   ];
-  return cab('Visão do dia · ' + CFG.nome, 'Painel executivo', 'Os seis pilares da operação em semáforo. Clique em um pilar para abrir o módulo.') +
+  return faixa() + cab('Visão do dia · ' + CFG.nome, 'Painel executivo', 'Os seis pilares da operação em semáforo. Clique em um pilar para abrir o módulo.') +
   `<div class="kpis">${kpi('Navios operando', op.length, `de ${CFG.bercos} berços`)}${kpi('Movimentado hoje', fmt(movDia / 1000, 1), 'mil t', '▲ ' + fmt(movDia / CFG.metaDia * 100) + '% da meta diária', movDia >= CFG.metaDia ? 'up' : 'down')}${kpi('Carretas no ciclo', D.carretas.length, '', 'ciclo médio ' + fmt(D.carretas.reduce((s, c) => s + c.ciclo, 0) / D.carretas.length) + ' min')}${kpi('Estoque nos pátios', fmt(D.patios.reduce((s, p) => s + p.oc, 0) / 1000, 1), 'mil t', fmt(ocup) + '% da capacidade')}</div>
   <div class="pilares">${pil.map(p => `<a class="pilar" href="#${p[0]}"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>${p[1]}</b>${chip(p[4], p[3])}</div><p>${p[2]}</p></a>`).join('')}</div>
   <div class="grade"><section class="painel c8"><h2>Movimentação por hora <small>t/h hoje · linha tracejada = meta</small></h2>${grafBarras({ rotulos: D.horaDescarga.map((_, i) => String(i).padStart(2, '0')), series: [{ n: 'Movimentado', c: 's1', v: D.horaDescarga }], linha: { v: D.horaDescarga.map(() => CFG.metaDia / 24) } })}</section>
