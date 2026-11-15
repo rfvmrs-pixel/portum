@@ -33,7 +33,8 @@ function guardar(msg) {
   const pos = m.PositionReport || m.StandardClassBPositionReport;
   if (pos) {
     n.lat = pos.Latitude; n.lon = pos.Longitude;
-    n.sog = pos.Sog; n.cog = pos.Cog; n.rumo = pos.TrueHeading !== 511 ? pos.TrueHeading : null;
+    // AIS: 102.3 nós = velocidade não informada; 360° = rumo não informado; 511 = proa não informada
+    n.sog = pos.Sog >= 102.2 ? null : pos.Sog; n.cog = pos.Cog >= 360 ? null : pos.Cog; n.rumo = pos.TrueHeading !== 511 ? pos.TrueHeading : null;
     if (typeof pos.NavigationalStatus === 'number') n.status = STATUS[pos.NavigationalStatus] || null;
     n.classe = m.PositionReport ? 'A' : 'B';
   }
